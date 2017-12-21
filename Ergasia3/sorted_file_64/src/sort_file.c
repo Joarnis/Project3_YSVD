@@ -54,7 +54,7 @@ SR_ErrorCode SR_OpenFile(const char *fileName, int *fileDesc) {
     return SR_ERROR;
   }
 
-  // Else check if its a heap file
+  // Else check if its a sort file
   BF_Block *block;
   BF_Block_Init(&block);
   // There should be an ".sf" at the start of the first block
@@ -62,7 +62,7 @@ SR_ErrorCode SR_OpenFile(const char *fileName, int *fileDesc) {
   char* block_data = BF_Block_GetData(block);
   if (strcmp(block_data, ".sf") != 0) {
     printf("Error: File %s is not a sort file\n", fileName);
-    return HP_ERROR;
+    return SR_ERROR;
   }
 
   // Assign the fileDesc value
@@ -163,7 +163,16 @@ SR_ErrorCode SR_SortedFile(
   int fieldNo,
   int bufferSize
 ) {
-  // Your code goes here
+  // Check for valid bufferSize and fieldNo
+  if (bufferSize < 3 || bufferSize > BF_BUFFER_SIZE)
+    reutrn SR_WRONG_BUFFER_SIZE;
+  if (fieldNo < 0 || fieldNo > 3)
+    return SR_WRONG_FIELD_NO;
+
+  // USE SR_OPENFILE??
+  // FOR FOR BLOCK INIT AND DESTRUCTION
+
+  
 
   return SR_OK;
 }
