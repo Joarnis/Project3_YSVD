@@ -22,7 +22,7 @@ SR_ErrorCode SR_CreateFile(const char *fileName) {
   CHK_BF_ERR(BF_OpenFile(filename, &fileDesc));
 
   // Allocate the file's first block
-  BF_Block *block;
+  BF_Block* block;
   BF_Block_Init(&block);
   CHK_BF_ERR(BF_AllocateBlock(fileDesc, block));
   // Initialize it with metadata needed to know its a heap file (.sf)
@@ -55,7 +55,7 @@ SR_ErrorCode SR_OpenFile(const char *fileName, int *fileDesc) {
   }
 
   // Else check if its a sort file
-  BF_Block *block;
+  BF_Block* block;
   BF_Block_Init(&block);
   // There should be an ".sf" at the start of the first block
   CHK_BF_ERR(BF_GetBlock(tmp_fd, 0, block));
@@ -87,7 +87,7 @@ SR_ErrorCode SR_CloseFile(int fileDesc) {
 
 
 SR_ErrorCode SR_InsertEntry(int fileDesc,	Record record) {
-  BF_Block *block;
+  BF_Block* block;
   BF_Block_Init(&block);
   // Get number of blocks
   int block_num;
@@ -174,14 +174,14 @@ SR_ErrorCode SR_SortedFile(
   char* temp_filename = "temp";
   CHK_BF_ERR(BF_CreateFile(temp_file));
 
-  // Use SR_OpenFile to open the input sort file (only uses 1 block and destroys it after)
+  // Use SR_OpenFile to open the input sort file (only uses 1 block, unpins and destroys it after)
   int input_fileDesc = -1;
   SR_OpenFile(input_filename, &input_fileDesc);
 
-  // Allocate buffer blocks (BUFF_DATA PINAKAS ME CHAR* GIA TA BUFFERS)
-  BF_Block **buff_blocks;
+  // Allocate needed buffer block and data arrays (BUFF_DATA PINAKAS ME CHAR* GIA TA BUFFERS)
+  BF_Block** buff_blocks;
   buff_blocks = malloc(bufferSize * sizeof(BF_Block*));
-  char **buff_data;
+  char** buff_data;
   buff_data = malloc(bufferSize * sizeof(char*));
 
   // Initialize the buffer blocks
