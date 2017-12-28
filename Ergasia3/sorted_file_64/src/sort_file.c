@@ -180,14 +180,15 @@ SR_ErrorCode SR_SortedFile(
   char **buff_data;
   buff_data = malloc(bufferSize * sizeof(char*));
 
-  for (int i = 0; i < bufferSize; i++) {
+  for (int i = 0; i < bufferSize; i++)
     BF_Block_Init(&buff_blocks[i]); // <- elpizw na min thelei parentheseis
 
-    CHK_BF_ERR(BF_AllocateBlock(fileDesc, block));
-    // Initialize with metadata (1 record in the block)
-    char* block_data = BF_Block_GetData(block);
 
-  }
+  // WHILE FOR QUICKSORT
+  CHK_BF_ERR(BF_AllocateBlock(fileDesc, block));
+  // Initialize with metadata (1 record in the block)
+  char* block_data = BF_Block_GetData(block);
+
 
   // Use SR_OPENFILE to open the input sort file
   int input_filedesc = -1;
@@ -220,8 +221,15 @@ SR_ErrorCode SR_SortedFile(
 // AFOU TA DEDOMENA KATHE BLOCK EINAI STANDARD
 // EPISIS MPOROUME MONO NA XRISIMOPOIISOUME TA BUFFER BLOCKS, OTAN FERNOUME KATI TO FORTWNOUME EKEI
 
+  
+  
+  for (int i = 0; i < bufferSize; i++)
+    BF_Block_Destroy(&buff_blocks[i]); // <- elpizw na min thelei parentheseis
+
+
   CHK_BF_ERR(BF_CloseFile(output_filename));
   CHK_BF_ERR(BF_CloseFile(temp_file));
+
 
   return SR_OK;
 }
