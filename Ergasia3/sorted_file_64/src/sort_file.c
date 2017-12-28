@@ -163,16 +163,28 @@ SR_ErrorCode SR_SortedFile(
   int fieldNo,
   int bufferSize
 ) {
+
   // Check for valid bufferSize and fieldNo
   if (bufferSize < 3 || bufferSize > BF_BUFFER_SIZE)
     reutrn SR_WRONG_BUFFER_SIZE;
   if (fieldNo < 0 || fieldNo > 3)
     return SR_WRONG_FIELD_NO;
 
+  //create the sorted file
+  CHK_BF_ERR(BF_CreateFile(output_filename));
+
+  //create a temo file
+  char* temp_file="temp";
+  CHK_BF_ERR(BF_CreateFile(temp_file));
+
   // USE SR_OPENFILE??
   // FOR FOR BLOCK INIT AND DESTRUCTION
-
   
+
+  ////////////////part 2//////////////////
+
+  CHK_BF_ERR(BF_CloseFile(output_filename));
+  CHK_BF_ERR(BF_CloseFile(temp_file));
 
   return SR_OK;
 }
