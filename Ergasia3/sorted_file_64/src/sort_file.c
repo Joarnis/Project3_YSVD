@@ -198,14 +198,14 @@ SR_ErrorCode SR_SortedFile(
   char* block_data = BF_Block_GetData(block);
 
 
-  
+
 
   //create the sorted file
   CHK_BF_ERR(BF_CreateFile(output_filename));
 
 
 
-  
+
 
   ////////////////part 2//////////////////
 // STO TEMP FILE TA PRWTA N EINAI TA BLOCKS POU EXEI TO INPUT FILE OPOU TA
@@ -222,10 +222,10 @@ SR_ErrorCode SR_SortedFile(
 // AFOU TA DEDOMENA KATHE BLOCK EINAI STANDARD
 // EPISIS MPOROUME MONO NA XRISIMOPOIISOUME TA BUFFER BLOCKS, OTAN FERNOUME KATI TO FORTWNOUME EKEI
 
-  
-  
-  for (int i = 0; i < bufferSize; i++)
-    BF_Block_Destroy(&buff_blocks[i]); // <- ELPIZW NA MIN THELEI PARENTHESEIS
+
+  //YPARXEI KAI PIO PANW
+  //for (int i = 0; i < bufferSize; i++)
+  //  BF_Block_Destroy(&buff_blocks[i]); // <- ELPIZW NA MIN THELEI PARENTHESEIS
 
   // Use SR_closeFile to close the input file (SR_OpenFile was used to open it)
   SR_CloseFile(input_fileDesc);
