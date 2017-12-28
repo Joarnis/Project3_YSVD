@@ -174,15 +174,23 @@ SR_ErrorCode SR_SortedFile(
   char* temp_filename = "temp";
   CHK_BF_ERR(BF_CreateFile(temp_file));
 
+  // Use SR_OpenFile to open the input sort file (only uses 1 block and destroys it after)
+  int input_fileDesc = -1;
+  SR_OpenFile(input_filename, &input_fileDesc);
+
   // Allocate buffer blocks (BUFF_DATA PINAKAS ME CHAR* GIA TA BUFFERS)
   BF_Block **buff_blocks;
   buff_blocks = malloc(bufferSize * sizeof(BF_Block*));
   char **buff_data;
   buff_data = malloc(bufferSize * sizeof(char*));
 
+  // Initialize the buffer blocks
   for (int i = 0; i < bufferSize; i++)
-    BF_Block_Init(&buff_blocks[i]); // <- elpizw na min thelei parentheseis
+    BF_Block_Init(&buff_blocks[i]); // <- ELPIZW NA MIN THELEI PARENTHESEIS
 
+  // Get number of blocks of the input sort file
+  int block_num = -1;
+  CHK_BF_ERR(BF_GetBlockCounter(input_fileDesc, &block_num));
 
   // WHILE FOR QUICKSORT
   CHK_BF_ERR(BF_AllocateBlock(fileDesc, block));
@@ -190,14 +198,7 @@ SR_ErrorCode SR_SortedFile(
   char* block_data = BF_Block_GetData(block);
 
 
-  // Use SR_OPENFILE to open the input sort file
-  int input_filedesc = -1;
-  SR_OpenFile(input_filename, &input_filedesc);
   
-  // Get number of blocks of the input sort file
-  int block_num = -1;
-  CHK_BF_ERR(BF_GetBlockCounter(input_filedesc, &block_num));
-
 
   //create the sorted file
   CHK_BF_ERR(BF_CreateFile(output_filename));
@@ -224,8 +225,10 @@ SR_ErrorCode SR_SortedFile(
   
   
   for (int i = 0; i < bufferSize; i++)
-    BF_Block_Destroy(&buff_blocks[i]); // <- elpizw na min thelei parentheseis
+    BF_Block_Destroy(&buff_blocks[i]); // <- ELPIZW NA MIN THELEI PARENTHESEIS
 
+  // Use SR_closeFile to close the input file (SR_OpenFile was used to open it)
+  SR_CloseFile(input_fileDesc);
 
   CHK_BF_ERR(BF_CloseFile(output_filename));
   CHK_BF_ERR(BF_CloseFile(temp_file));
