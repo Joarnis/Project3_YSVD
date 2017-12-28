@@ -164,24 +164,63 @@ SR_ErrorCode SR_SortedFile(
   int bufferSize
 ) {
 
-  // Check for valid bufferSize and fieldNo
+  // Check for invalid bufferSize and fieldNo
   if (bufferSize < 3 || bufferSize > BF_BUFFER_SIZE)
-    reutrn SR_WRONG_BUFFER_SIZE;
+    return SR_WRONG_BUFFER_SIZE;
   if (fieldNo < 0 || fieldNo > 3)
     return SR_WRONG_FIELD_NO;
+
+  // Create and open a temp file
+  char* temp_filename = "temp";
+  CHK_BF_ERR(BF_CreateFile(temp_file));
+
+  // Allocate buffer blocks (BUFF_DATA PINAKAS ME CHAR* GIA TA BUFFERS)
+  BF_Block **buff_blocks;
+  buff_blocks = malloc(bufferSize * sizeof(BF_Block*));
+  char **buff_data;
+  buff_data = malloc(bufferSize * sizeof(char*));
+
+  for (int i = 0; i < bufferSize; i++) {
+    BF_Block_Init(&buff_blocks[i]); // <- elpizw na min thelei parentheseis
+
+    CHK_BF_ERR(BF_AllocateBlock(fileDesc, block));
+    // Initialize with metadata (1 record in the block)
+    char* block_data = BF_Block_GetData(block);
+
+  }
+
+  // Use SR_OPENFILE to open the input sort file
+  int input_filedesc = -1;
+  SR_OpenFile(input_filename, &input_filedesc);
+  
+  // Get number of blocks of the input sort file
+  int block_num = -1;
+  CHK_BF_ERR(BF_GetBlockCounter(input_filedesc, &block_num));
+
 
   //create the sorted file
   CHK_BF_ERR(BF_CreateFile(output_filename));
 
-  //create a temo file
-  char* temp_file="temp";
-  CHK_BF_ERR(BF_CreateFile(temp_file));
 
-  // USE SR_OPENFILE??
-  // FOR FOR BLOCK INIT AND DESTRUCTION
+
   
 
   ////////////////part 2//////////////////
+// STO TEMP FILE TA PRWTA BUFFERSIZE BLOCKS EINAI 1 BLOCK GIA KATHE BUFFER
+// TA EPOMENA N EINAI TA BLOCKS POU EXEI TO INPUT FILE OPOU TA
+// SINEXOMENA N/BUFFERSIZE EINAI IDI TAKSINOMIMENA METAKSI TOUS
+// PX AN TA BLOCKS TOU INPUT EINAI 9 ME BUFFERSIZE 3
+// TA 0,1,2  BLOCKS EINAI GIA TA BUFFERS
+// TA 3,4,5 EINAI TAKSINOMIMENA METAKSI TOUS
+// OPWS KAI TA 6,7,8 KAI TA 9,10,11
+// AN DEN DIAIREITAI AKRIVWS APLA MENOUN KAPOIA STO TELOS
+// TA XW ME MEGALA GRAMMATA GIA NA THIMITHOUME NA TA SVISOUME AYTA OK?
+
+// SIMANTIKO
+// STIN ARXI TOU KATHE BLOCK IPARXEI ENAS INT POU LEEI POSA RECORDS IPARXOUN MESA STO BLOCK
+// DEN KSERW AN PREPEI NA XRISIMOPOIISOUME ALLA METADATA
+// AFOU TA DEDOMENA KATHE BLOCK EINAI STANDARD
+// EPISIS MPOROUME MONO NA XRISIMOPOIISOUME TA BUFFER BLOCKS, OTAN FERNOUME KATI TO FORTWNOUME EKEI
 
   CHK_BF_ERR(BF_CloseFile(output_filename));
   CHK_BF_ERR(BF_CloseFile(temp_file));
