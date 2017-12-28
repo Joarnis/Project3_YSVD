@@ -172,7 +172,20 @@ SR_ErrorCode SR_SortedFile(
 
   // Create and open a temp file
   char* temp_filename = "temp";
-  CHK_BF_ERR(BF_CreateFile(temp_file));
+  CHK_BF_ERR(BF_CreateFile(temp_filename));
+  int temp_fileDesk=0;
+  CHK_BF_ERR(BF_OpenFile(temp_filename, &temp_fileDesk));
+  BF_Block* temp_block;
+
+  //the temp file will have two times the Blocks of the original file
+  //we know that so we will allocate them now
+  //we wont need to create anymore
+  //and beacuse of the way we use them this will simplify the process
+  for(int i=0;i<2*input_file_block_number;i++)
+  {
+    CHK_BF_ERR(BF_AllocateBlock(temp_fileDesk, temp_block));
+    CHK_BF_ERR(BF_UnpinBlock(temp_block));
+  }
 
   // Use SR_OpenFile to open the input sort file (only uses 1 block, unpins and destroys it after)
   int input_fileDesc = -1;
@@ -186,8 +199,10 @@ SR_ErrorCode SR_SortedFile(
 
   // Initialize the buffer blocks
   for (int i = 0; i < bufferSize; i++)
+  {
     BF_Block_Init(&buff_blocks[i]); // <- ELPIZW NA MIN THELEI PARENTHESEIS
-
+    CHK_BF_ERR(BF_AllocateBlock(fileDesc, buff_blocks[i]));
+  }
   // Get number of blocks of the input sort file
   int block_num = -1;
   CHK_BF_ERR(BF_GetBlockCounter(input_fileDesc, &block_num));
@@ -226,6 +241,8 @@ SR_ErrorCode SR_SortedFile(
   //YPARXEI KAI PIO PANW
   //for (int i = 0; i < bufferSize; i++)
   //  BF_Block_Destroy(&buff_blocks[i]); // <- ELPIZW NA MIN THELEI PARENTHESEIS
+
+
 
   // Use SR_closeFile to close the input file (SR_OpenFile was used to open it)
   SR_CloseFile(input_fileDesc);
