@@ -170,6 +170,15 @@ SR_ErrorCode SR_SortedFile(
   if (fieldNo < 0 || fieldNo > 3)
     return SR_WRONG_FIELD_NO;
 
+  // Use SR_OpenFile to open the input sort file (only uses 1 block, unpins and destroys it after)
+  int input_fileDesc = -1;
+  SR_OpenFile(input_filename, &input_fileDesc);
+
+  //TOU ALAKSA THESI EPEIDH XREIAZOMAI TON ARITHMO TWN BLOCKS
+  int input_file_block_number;
+  CHK_BF_ERR(BF_GetBlockCounter(tmp_fd, &input_file_block_number));
+
+
   // Create and open a temp file
   char* temp_filename = "temp";
   CHK_BF_ERR(BF_CreateFile(temp_filename));
@@ -187,9 +196,7 @@ SR_ErrorCode SR_SortedFile(
     CHK_BF_ERR(BF_UnpinBlock(temp_block));
   }
 
-  // Use SR_OpenFile to open the input sort file (only uses 1 block, unpins and destroys it after)
-  int input_fileDesc = -1;
-  SR_OpenFile(input_filename, &input_fileDesc);
+
 
   // Allocate needed buffer block and data arrays (BUFF_DATA PINAKAS ME CHAR* GIA TA BUFFERS)
   BF_Block** buff_blocks;
