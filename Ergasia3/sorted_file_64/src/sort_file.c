@@ -190,26 +190,33 @@ SR_ErrorCode SR_SortedFile(
   //we know that so we will allocate them now
   //we wont need to create anymore
   //and beacuse of the way we use them this will simplify the process
-  for(int i=0;i<2*input_file_block_number;i++)
-  {
+  for(int i=0;i<2*input_file_block_number;i++){
     CHK_BF_ERR(BF_AllocateBlock(temp_fileDesk, temp_block));
     CHK_BF_ERR(BF_UnpinBlock(temp_block));
+    BF_Block_Destroy(&temp_block);
+
   }
 
 
 
   // Allocate needed buffer block and data arrays (BUFF_DATA PINAKAS ME CHAR* GIA TA BUFFERS)
-  BF_Block** buff_blocks;
-  buff_blocks = malloc(bufferSize * sizeof(BF_Block*));
-  char** buff_data;
-  buff_data = malloc(bufferSize * sizeof(char*));
+  //GIATI ME MALLOC KSEROUME TO BUFFER SIZE
+//  BF_Block** buff_blocks;
+//  buff_blocks = malloc(bufferSize * sizeof(BF_Block*));
+//  char** buff_data;
+//  buff_data = malloc(bufferSize * sizeof(char*));
+
+  BF_Block* buff_blocks[bufferSize];
+  char* buffer_data[bufferSize];
 
   // Initialize the buffer blocks
-  for (int i = 0; i < bufferSize; i++)
-  {
+  for (int i = 0; i < bufferSize; i++){
     BF_Block_Init(&buff_blocks[i]); // <- ELPIZW NA MIN THELEI PARENTHESEIS
     CHK_BF_ERR(BF_AllocateBlock(fileDesc, buff_blocks[i]));
-  }
+    buff_data[i] = BF_Block_GetData(buff_blocks[i]);
+  }//POIO EINAI TO FILEDESK EDW???
+
+
   // Get number of blocks of the input sort file
   int block_num = -1;
   CHK_BF_ERR(BF_GetBlockCounter(input_fileDesc, &block_num));
@@ -245,11 +252,23 @@ SR_ErrorCode SR_SortedFile(
 // EPISIS MPOROUME MONO NA XRISIMOPOIISOUME TA BUFFER BLOCKS, OTAN FERNOUME KATI TO FORTWNOUME EKEI
 
 
-  //YPARXEI KAI PIO PANW
-  //for (int i = 0; i < bufferSize; i++)
-  //  BF_Block_Destroy(&buff_blocks[i]); // <- ELPIZW NA MIN THELEI PARENTHESEIS
-
-
+//YPARXEI KAI PIO PANW
+//for (int i = 0; i < bufferSize; i++)
+//  BF_Block_Destroy(&buff_blocks[i]); // <- ELPIZW NA MIN THELEI PARENTHESEIS
+  int j=0;
+  int num_of_blocks=bufferSize; //the next block will be that far
+  int num_of_block_groups=input_file_block_number/bufferSize;
+  int groups_remain=num_of_block_groups;
+  while(1){
+    for(int i=0;i<bufferSize-1;i++){
+        //
+      }
+    groups_remain-=bufferSize-1
+  //  if(input_file_block_number%bufferSize!=0){
+    //  break;
+    //}
+  //  num_of_blocks*=buffersize;
+  }
 
   // Use SR_closeFile to close the input file (SR_OpenFile was used to open it)
   SR_CloseFile(input_fileDesc);
