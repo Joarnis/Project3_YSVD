@@ -189,26 +189,16 @@ SR_ErrorCode SR_SortedFile(
 
 
 
-  // Allocate needed buffer block and data arrays (BUFF_DATA PINAKAS ME CHAR* GIA TA BUFFERS)
-BF_Block** buff_blocks;
-buff_blocks = malloc(bufferSize * sizeof(BF_Block*));
-char** buff_data;
-buff_data = malloc(bufferSize * sizeof(char*));
 
-
-//GIATI ME MALLOC KSEROUME TO BUFFER SIZE
-  // EISAI KOUTOS RE MLK KSEROUME TO BUFFERSIZE STO COMPILE TIME???
-  // MI PEIRAZEIS TA DIKA MOU GT THA SE GAMISW
-  //BF_Block* buff_blocks[bufferSize];
-  //char* buffer_data[bufferSize];
+  BF_Block* buff_blocks[bufferSize];
+  char* buffer_data[bufferSize];
 
   // Initialize the buffer blocks
   for (int i = 0; i < bufferSize; i++){
     BF_Block_Init(&buff_blocks[i]); // <- ELPIZW NA MIN THELEI PARENTHESEIS
     CHK_BF_ERR(BF_AllocateBlock(fileDesc, buff_blocks[i]));
     buff_data[i] = BF_Block_GetData(buff_blocks[i]);
-  }//POIO EINAI TO FILEDESK EDW???
-  // EINAI TO TEMP GT EDW KANW ALLOCATION EGW, ALLA OTAN TELIKA XREIASTW
+  }
 
 
   // Get number of blocks of the input sort file
@@ -253,11 +243,9 @@ buff_data = malloc(bufferSize * sizeof(char*));
   //we know that so we will allocate them now
   //we wont need to create anymore
   //and beacuse of the way we use them this will simplify the process
-  
-  // EPISIS AUTO EINAI ARGOOOOOO
-  // KAI TO DESTROY EINAI LATHOS
-  // MATHE TIN VIVLIOTHIKI
-  for(int i=0;i<2*input_file_block_number;i++){
+
+
+  for(int i=0;i<input_file_block_number;i++){
     CHK_BF_ERR(BF_AllocateBlock(temp_fileDesk, temp_block));
     CHK_BF_ERR(BF_UnpinBlock(temp_block));
   }
@@ -287,10 +275,6 @@ buff_data = malloc(bufferSize * sizeof(char*));
   //  num_of_blocks*=buffersize;
   }
 
-  //YPARXEI KAI PIO PANW
-// EINAI TO DESTROY, MPAINEI STO TELOS TOU PROGRAMMATOS
-// DEN IPARXEI PIO PANW
-// MATHE TIN VIVLIOTHIKI
 for (int i = 0; i < bufferSize; i++)
   BF_Block_Destroy(&buff_blocks[i]); // <- ELPIZW NA MIN THELEI PARENTHESEIS
 
