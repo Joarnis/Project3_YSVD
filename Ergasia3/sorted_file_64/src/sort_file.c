@@ -263,12 +263,7 @@ buff_data = malloc(bufferSize * sizeof(char*));
   }
 
 
-//YPARXEI KAI PIO PANW
-// EINAI TO DESTROY, MPAINEI STO TELOS TOU PROGRAMMATOS
-// DEN IPARXEI PIO PANW
-// MATHE TIN VIVLIOTHIKI
-//for (int i = 0; i < bufferSize; i++)
-//  BF_Block_Destroy(&buff_blocks[i]); // <- ELPIZW NA MIN THELEI PARENTHESEIS
+
   int j=0;
   int num_of_blocks=bufferSize; //the next block will be that far
   int num_of_block_groups=input_file_block_number/bufferSize;
@@ -292,8 +287,16 @@ buff_data = malloc(bufferSize * sizeof(char*));
   //  num_of_blocks*=buffersize;
   }
 
+  //YPARXEI KAI PIO PANW
+// EINAI TO DESTROY, MPAINEI STO TELOS TOU PROGRAMMATOS
+// DEN IPARXEI PIO PANW
+// MATHE TIN VIVLIOTHIKI
+for (int i = 0; i < bufferSize; i++)
+  BF_Block_Destroy(&buff_blocks[i]); // <- ELPIZW NA MIN THELEI PARENTHESEIS
+
   // Use SR_closeFile to close the input file (SR_OpenFile was used to open it)
   SR_CloseFile(input_fileDesc);
+
 
   CHK_BF_ERR(BF_CloseFile(output_filename));
   CHK_BF_ERR(BF_CloseFile(temp_file));
