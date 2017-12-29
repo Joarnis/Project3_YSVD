@@ -172,8 +172,9 @@ SR_ErrorCode SR_SortedFile(
 
   // Use SR_OpenFile to open the input sort file (only uses 1 block, unpins and destroys it after)
   int input_fileDesc = -1;
-  SR_OpenFile(input_filename, &input_fileDesc);
+  SR_OpenFile(input_fileName, &input_fileDesc);
 
+  // TO EVALES PRIN DIMIOURGITHEI TO ARXEIO??
   //TOU ALAKSA THESI EPEIDH XREIAZOMAI TON ARITHMO TWN BLOCKS
   int input_file_block_number;
   CHK_BF_ERR(BF_GetBlockCounter(tmp_fd, &input_file_block_number));
@@ -186,28 +187,20 @@ SR_ErrorCode SR_SortedFile(
   CHK_BF_ERR(BF_OpenFile(temp_filename, &temp_fileDesk));
   BF_Block* temp_block;
 
-  //the temp file will have two times the Blocks of the original file
-  //we know that so we will allocate them now
-  //we wont need to create anymore
-  //and beacuse of the way we use them this will simplify the process
-  for(int i=0;i<2*input_file_block_number;i++){
-    CHK_BF_ERR(BF_AllocateBlock(temp_fileDesk, temp_block));
-    CHK_BF_ERR(BF_UnpinBlock(temp_block));
-    BF_Block_Destroy(&temp_block);
-
-  }
-
 
 
   // Allocate needed buffer block and data arrays (BUFF_DATA PINAKAS ME CHAR* GIA TA BUFFERS)
-  //GIATI ME MALLOC KSEROUME TO BUFFER SIZE
-//  BF_Block** buff_blocks;
-//  buff_blocks = malloc(bufferSize * sizeof(BF_Block*));
-//  char** buff_data;
-//  buff_data = malloc(bufferSize * sizeof(char*));
+BF_Block** buff_blocks;
+buff_blocks = malloc(bufferSize * sizeof(BF_Block*));
+char** buff_data;
+buff_data = malloc(bufferSize * sizeof(char*));
 
-  BF_Block* buff_blocks[bufferSize];
-  char* buffer_data[bufferSize];
+
+//GIATI ME MALLOC KSEROUME TO BUFFER SIZE
+  // EISAI KOUTOS RE MLK KSEROUME TO BUFFERSIZE STO COMPILE TIME???
+  // MI PEIRAZEIS TA DIKA MOU GT THA SE GAMISW
+  //BF_Block* buff_blocks[bufferSize];
+  //char* buffer_data[bufferSize];
 
   // Initialize the buffer blocks
   for (int i = 0; i < bufferSize; i++){
@@ -215,6 +208,7 @@ SR_ErrorCode SR_SortedFile(
     CHK_BF_ERR(BF_AllocateBlock(fileDesc, buff_blocks[i]));
     buff_data[i] = BF_Block_GetData(buff_blocks[i]);
   }//POIO EINAI TO FILEDESK EDW???
+  // EINAI TO TEMP GT EDW KANW ALLOCATION EGW, ALLA OTAN TELIKA XREIASTW
 
 
   // Get number of blocks of the input sort file
@@ -251,8 +245,28 @@ SR_ErrorCode SR_SortedFile(
 // AFOU TA DEDOMENA KATHE BLOCK EINAI STANDARD
 // EPISIS MPOROUME MONO NA XRISIMOPOIISOUME TA BUFFER BLOCKS, OTAN FERNOUME KATI TO FORTWNOUME EKEI
 
+// PARE AUTO EDW KANE OTI THES
+//OTAN ARXISEI TO PART 2 STO TEMP FILE THA IPARXOUN ALLOCATED BLOCKS ISA ME TON ARITHMO TWN BLOCKS STO ARXIKO ARXEIO
+// APO KEI KAI PERA KANE OTI THES
+
+//the temp file will have two times the Blocks of the original file
+  //we know that so we will allocate them now
+  //we wont need to create anymore
+  //and beacuse of the way we use them this will simplify the process
+  
+  // EPISIS AUTO EINAI ARGOOOOOO
+  // KAI TO DESTROY EINAI LATHOS
+  // MATHE TIN VIVLIOTHIKI
+  for(int i=0;i<2*input_file_block_number;i++){
+    CHK_BF_ERR(BF_AllocateBlock(temp_fileDesk, temp_block));
+    CHK_BF_ERR(BF_UnpinBlock(temp_block));
+  }
+
 
 //YPARXEI KAI PIO PANW
+// EINAI TO DESTROY, MPAINEI STO TELOS TOU PROGRAMMATOS
+// DEN IPARXEI PIO PANW
+// MATHE TIN VIVLIOTHIKI
 //for (int i = 0; i < bufferSize; i++)
 //  BF_Block_Destroy(&buff_blocks[i]); // <- ELPIZW NA MIN THELEI PARENTHESEIS
   int j=0;

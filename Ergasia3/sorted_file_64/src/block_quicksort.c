@@ -10,7 +10,7 @@ Quicksort(A as array, low as int, high as int){
 
 quicksort(char **buffer_data, int low, int high) {
     if (low < high) {
-        int pivot_location = Partition(buffer_data, low, high);
+        int pivot_location = partition(buffer_data, low, high);
         Quicksort(buffer_data, low, pivot_location);
         Quicksort(buffer_data, pivot_location + 1, high);
     }
