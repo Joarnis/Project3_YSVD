@@ -259,9 +259,17 @@ SR_ErrorCode SR_SortedFile(
   int num_of_blocks=bufferSize; //the next block will be that far
   int num_of_block_groups=input_file_block_number/bufferSize;
   int groups_remain=num_of_block_groups;
+  char* temp_data;
   while(1){
     for(int i=0;i<bufferSize-1;i++){
-        //
+      CHK_BF_ERR(BF_GetBlock(temp_fileDesk, 3*i, temp_block));
+      temp_data = BF_Block_GetData(temp_block);
+      buff_data[i] = temp_data;
+      CHK_BF_ERR(BF_UnpinBlock(temp_block));
+      BF_Block_Destroy(&temp_block);
+      }
+      if(num_of_block_groups==bufferSize-1&&input_file_block_number%bufferSize!=0){  //there is no need for a bigger group of blocks
+
       }
     groups_remain-=bufferSize-1
   //  if(input_file_block_number%bufferSize!=0){
