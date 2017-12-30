@@ -253,26 +253,55 @@ SR_ErrorCode SR_SortedFile(
 
 
   int j=0;
-  int num_of_blocks=bufferSize; //the next block will be that far
+  int num_of_blocks=bufferSize; //the next block will be that far and the block groups will have that many blocks
   int num_of_block_groups=input_file_block_number/bufferSize;
-  int groups_remain=num_of_block_groups;
-  char* temp_data;
-  while(1){
-    for(int i=0;i<bufferSize-1;i++){
-      CHK_BF_ERR(BF_GetBlock(temp_fileDesk, 3*i, temp_block));
-      temp_data = BF_Block_GetData(temp_block);
-      buff_data[i] = temp_data;
-      CHK_BF_ERR(BF_UnpinBlock(temp_block));
-      BF_Block_Destroy(&temp_block);
-      }
-      if(num_of_block_groups==bufferSize-1&&input_file_block_number%bufferSize!=0){  //there is no need for a bigger group of blocks
 
+  if(input_file_block_number/bufferSize==0)
+    num_of_block_groups++;
+
+  int groups_remain=num_of_block_groups;
+  int fl=0;
+  int j=1;
+  int blocknum[bufferSize];
+  int max_records=(BF_BLOCK_SIZE-sizeof(int))/sizeof(struct Record);
+  while(1){
+    for(int i=0;i<bufferSize-1;i++){//take the first block from the first bufferSize-1 block groups
+      CHK_BF_ERR(BF_GetBlock(temp_fileDesk,input_file_block_number*fl+ num_of_blocks*(i+j), buff_blocks[i]));
+      buff_data[i] = BF_Block_GetData(buff_blocks[i]);
+      blocknum[i]=input_file_block_number*fl+ num_of_blocks*(i+j);
       }
-    groups_remain-=bufferSize-1
-  //  if(input_file_block_number%bufferSize!=0){
-    //  break;
-    //}
-  //  num_of_blocks*=buffersize;
+
+      if(groups_remain==num_of_block_groups){//starting block for sorting
+        if(fl==0){
+          CHK_BF_ERR(BF_GetBlock(temp_fileDesk , input_file_block_number , buff_blocks[bufferSize-1]));
+          buff_data[bufferSize-1]=BF_Block_GetData(buff_blocks[bufferSize-1]);
+          blocknum[bufferSize-1]=input_file_block_number;
+        }
+        else{
+          CHK_BF_ERR(BF_GetBlock(temp_fileDesk , 0 , buff_blocks[bufferSize-1]));
+          buff_data[bufferSize-1]=BF_Block_GetData(buff_blocks[bufferSize-1]);
+          blocknum[bufferSize-1]=0;
+        }
+      }
+      groups_remain-=bufferSize-1;
+
+
+    //  if(groups_remain==bufferSize-1&&input_file_block_number%bufferSize!=0){  //there is no need for a bigger group of blocks
+        //last join
+    //    break;
+    //  }
+
+
+    if(groups_remain==0){
+      num_of_blocks*=bufferSize-1;
+      //DEN EINAI ETOIMO THELEI KAI ALLA NA TO KSANADW
+      num_of_block_groups=num_of_block_groups/(bufferSize-1)
+      groups_remain=num_of_block_groups;
+    }
+    else
+      j=j+bufferSize-1;
+      //j increases by bufferSize-1 in order to ignore the block groups that we saw before
+
   }
 
 for (int i = 0; i < bufferSize; i++)
