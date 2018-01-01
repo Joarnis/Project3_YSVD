@@ -278,10 +278,20 @@ SR_ErrorCode SR_SortedFile(
   int groups_remain=num_of_block_groups;
   int fl=0;//depending on the number we see at the begining or at the middle
   int blocknum[bufferSize]; //the number of the block we have at the buffer
-  int max_records=(BF_BLOCK_SIZE-sizeof(int))/sizeof(struct Record);//max records a block can have
   int new_group_num;
   int last_record; //the last block might not be full
+  int smaller_record_location; //smaller record in a buffer block
+  char* smaller
+//MAX RECORDS
   char *info[bufferSize-1];
+  int blocks_passed[bufferSize];
+  int records_passed[bufferSize];
+  char *records_in_block[bufferSize-1];
+
+  for(int i=0;i<bufferSize;i++){
+    int blocks_passed[i]=0;
+    int records_passed[i]=0;
+  }
 
   while(1){
     for(int i=0;i<bufferSize-1;i++){//take the first block from the first bufferSize-1 block groups
@@ -310,11 +320,28 @@ SR_ErrorCode SR_SortedFile(
       }
 
       for(int i=0;i<bufferSize-1;i++){
-        memcpy(info[i],buff_data[i] + fieldNo_pass,fieldNo_size); //pedio analoga me to fieldNo apo to prwto record
+        memcpy(records_in_block[i],buff_data[i],sizeof(int));
+        memcpy(info[i],buff_data[i] + fieldNo_pass,fieldNo_size);//pedio analoga me to fieldNo apo to prwto record
       }
 
       while(1){
+        strpcy(smaller_record,info[0]);
+        for(int i=1;i<bufferSize-1;i++){
+          if(strcmp(smaller_record,info[i])<0){
+            smaller_record_loc=i;
+            strpcy(smaller_record,info[i]);
+          }
+          //CHANGE THE RECORDS NUMBER
+        }
 
+        if(records_passed[bufferSize-1]<max_records){
+          memcpy(buff_data[bufferSize-1],sizeof(int) + buff_data[smaller_record_loc] +records_passed[bufferSize-1]*sizeof(Record) ,fieldNo_size);
+          records_passed[bufferSize-1]++;
+          //SETDIRTY
+        }
+        else{
+          //NEXT BLOCK
+        }
       }
 
       groups_remain-=bufferSize-1;
