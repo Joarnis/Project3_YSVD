@@ -239,37 +239,58 @@ SR_ErrorCode SR_SortedFile(
 //OTAN ARXISEI TO PART 2 STO TEMP FILE THA IPARXOUN ALLOCATED BLOCKS ISA ME TON ARITHMO TWN BLOCKS STO ARXIKO ARXEIO
 // APO KEI KAI PERA KANE OTI THES
 
-//the temp file will have two times the Blocks of the original file
+  //the temp file will have two times the Blocks of the original file
   //we know that so we will allocate them now
   //we wont need to create anymore
   //and beacuse of the way we use them this will simplify the process
-
-
   for(int i=0;i<input_file_block_number;i++){
     CHK_BF_ERR(BF_AllocateBlock(temp_fileDesk, temp_block));
     CHK_BF_ERR(BF_UnpinBlock(temp_block));
   }
 
+  int fieldNo_pass;//depending on fieldNo we need to pass at the start fieldNo_pass bits
+  int fieldNo_size;//size of what we are sorting
 
+  if(fieldNo==0){
+    fieldNo_pass=0;
+    fieldNo_size=sizeof(int);
+  }
+  else if(fieldNo==1){
+    fieldNo_pass=sizeof(int);
+    fieldNo_size=15*sizeof(char);
+  }
+  else if(fieldNo==2){
+    fieldNo_pass=sizeof(int)+15*sizeof(char);
+    fieldNo_size=20*sizeof(char);
+  }
+  else{
+    fieldNo_pass=sizeof(int)+15*sizeof(char)+20*sizeof(char);
+    fieldNo_size=20*sizeof(char);
+  }
 
-  int j=0;
+  int j=0;//helps as pass the groups we saw
   int num_of_blocks=bufferSize; //the next block will be that far and the block groups will have that many blocks
-  int num_of_block_groups=input_file_block_number/bufferSize;
+  int num_of_block_groups=input_file_block_number/bufferSize;//number of groups
 
   if(input_file_block_number/bufferSize==0)
-    num_of_block_groups++;
+    num_of_block_groups++;                  //if there is an incomplete group count it as a whole
 
   int groups_remain=num_of_block_groups;
-  int fl=0;
-  int j=1;
-  int blocknum[bufferSize];
-  int max_records=(BF_BLOCK_SIZE-sizeof(int))/sizeof(struct Record);
+  int fl=0;//depending on the number we see at the begining or at the middle
+  int blocknum[bufferSize]; //the number of the block we have at the buffer
+  int max_records=(BF_BLOCK_SIZE-sizeof(int))/sizeof(struct Record);//max records a block can have
+  int new_group_num;
+  int last_record; //the last block might not be full
+  char *info[bufferSize-1];
+
   while(1){
     for(int i=0;i<bufferSize-1;i++){//take the first block from the first bufferSize-1 block groups
+      if(i==num_of_block_groups)
+        break;
       CHK_BF_ERR(BF_GetBlock(temp_fileDesk,input_file_block_number*fl+ num_of_blocks*(i+j), buff_blocks[i]));
       buff_data[i] = BF_Block_GetData(buff_blocks[i]);
       blocknum[i]=input_file_block_number*fl+ num_of_blocks*(i+j);
-      }
+    }
 
       if(groups_remain==num_of_block_groups){//starting block for sorting
         if(fl==0){
@@ -283,24 +304,39 @@ SR_ErrorCode SR_SortedFile(
           blocknum[bufferSize-1]=0;
         }
       }
+
+      if(num_of_block_groups<=bufferSize-1){
+        break;
+      }
+
+      for(int i=0;i<bufferSize-1;i++){
+        memcpy(info[i],buff_data[i] + fieldNo_pass,fieldNo_size); //pedio analoga me to fieldNo apo to prwto record
+      }
+
+      while(1){
+
+      }
+
       groups_remain-=bufferSize-1;
 
 
-    //  if(groups_remain==bufferSize-1&&input_file_block_number%bufferSize!=0){  //there is no need for a bigger group of blocks
-        //last join
-    //    break;
-    //  }
+
 
 
     if(groups_remain==0){
-      num_of_blocks*=bufferSize-1;
-      //DEN EINAI ETOIMO THELEI KAI ALLA NA TO KSANADW
-      num_of_block_groups=num_of_block_groups/(bufferSize-1)
-      groups_remain=num_of_block_groups;
+      num_of_blocks*=bufferSize-1; //we merged bufferSize-1 groups with the same number of blocks
+      new_group_num=num_of_block_groups/(bufferSize-1);
+      if(num_of_block_groups/(bufferSize-1)==0)
+        new_group_num++;
+      num_of_block_groups=new_group_num;  //the same here
+      groups_remain=num_of_block_groups; //we havent started merging the new groups yet
+      j=0;                               //we passed 0 so far
+      fl=(fl+1)%2;                       //changes between 0 and 1
     }
     else
       j=j+bufferSize-1;
       //j increases by bufferSize-1 in order to ignore the block groups that we saw before
+
 
   }
 
