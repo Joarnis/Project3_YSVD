@@ -173,48 +173,64 @@ SR_ErrorCode SR_SortedFile(
   // Use SR_OpenFile to open the input sort file (only uses 1 block, unpins and destroys it after)
   int input_fileDesc = -1;
   SR_OpenFile(input_fileName, &input_fileDesc);
-
-  // TO EVALES PRIN DIMIOURGITHEI TO ARXEIO??
-  //TOU ALAKSA THESI EPEIDH XREIAZOMAI TON ARITHMO TWN BLOCKS
+  // Get the number of blocks in the input file
   int input_file_block_number;
   CHK_BF_ERR(BF_GetBlockCounter(tmp_fd, &input_file_block_number));
-
 
   // Create and open a temp file
   char* temp_filename = "temp";
   CHK_BF_ERR(BF_CreateFile(temp_filename));
-  int temp_fileDesk=0;
+  int temp_fileDesk = -1;
   CHK_BF_ERR(BF_OpenFile(temp_filename, &temp_fileDesk));
+
+
+  // AUTO?? PREPEI NA XEIRIZOMASTE MONO TA BUFFER BLOCKS (PAIZEI NA TO XA VALEI KEGW?)
   BF_Block* temp_block;
 
 
-
-
+  // Buffers and initialization
   BF_Block* buff_blocks[bufferSize];
   char* buffer_data[bufferSize];
-
-  // Initialize the buffer blocks
-  for (int i = 0; i < bufferSize; i++){
+  for (int i = 0; i < bufferSize; i++)
     BF_Block_Init(&buff_blocks[i]); // <- ELPIZW NA MIN THELEI PARENTHESEIS
-    CHK_BF_ERR(BF_AllocateBlock(fileDesc, buff_blocks[i]));
-    buff_data[i] = BF_Block_GetData(buff_blocks[i]);
+
+  // Then copy each block of the input file into the temporary one (only uses 2 buffer blocks)
+  for (int i = 0; i < input_file_block_number; i++) {
+    // Get block of input file
+    CHK_BF_ERR(BF_GetBlock(input_fileDesc, i, buff_blocks[0]));
+    buff_data[0] = BF_Block_GetData(buff_blocks[0]);
+    // Create block into the temp file
+    CHK_BF_ERR(BF_AllocateBlock(temp_fileDesk, buff_blocks[1]));
+    buff_data[1] = BF_Block_GetData(buff_blocks[1]);
+    // Copy data
+    memcpy(block_data[1], block_data[0], BF_BLOCK_SIZE);
+    // Dirty and unpin
+    BF_Block_SetDirty(block_data[1]);
+    CHK_BF_ERR(BF_UnpinBlock(block_data[0]));
+    CHK_BF_ERR(BF_UnpinBlock(block_data[1]));
   }
 
+  // Main while loop (for step 1, quicksort)
+  // Sort blocks in groups of bufferSize
+  int curr_group = 0;
+  while (curr_group*bufferSize < input_file_block_number) {
+    // Load blocks into buffers
+    for (int i = 0; i < bufferSize; i++) {
+      CHK_BF_ERR(BF_GetBlock(input_fileDesc, curr_group*bufferSize + i, buff_blocks[i]));
+      buff_data[i] = BF_Block_GetData(buff_blocks[i]);
+    }
+    // Call quicksort
+    
 
-  // Get number of blocks of the input sort file
-  int block_num = -1;
-  CHK_BF_ERR(BF_GetBlockCounter(input_fileDesc, &block_num));
 
-  // WHILE FOR QUICKSORT
-  CHK_BF_ERR(BF_AllocateBlock(fileDesc, block));
-  // Initialize with metadata (1 record in the block)
-  char* block_data = BF_Block_GetData(block);
+    // Move on to the next group
+    curr_group++;
+  }
 
-
-
-
-  //create the sorted file
+  // Create the sorted, output file
   CHK_BF_ERR(BF_CreateFile(output_filename));
+  // Check if bufferSize is greater than the number of blocks in the input file
+  // in that case, step 2 is not needed
 
 
 
