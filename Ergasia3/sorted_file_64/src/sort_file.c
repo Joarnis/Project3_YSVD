@@ -183,11 +183,6 @@ SR_ErrorCode SR_SortedFile(
   int temp_fileDesk = -1;
   CHK_BF_ERR(BF_OpenFile(temp_filename, &temp_fileDesk));
 
-
-  // AUTO?? PREPEI NA XEIRIZOMASTE MONO TA BUFFER BLOCKS (PAIZEI NA TO XA VALEI KEGW?)
-  BF_Block* temp_block;
-
-
   // Buffers and initialization
   BF_Block* buff_blocks[bufferSize];
   char* buffer_data[bufferSize];
@@ -203,11 +198,11 @@ SR_ErrorCode SR_SortedFile(
     CHK_BF_ERR(BF_AllocateBlock(temp_fileDesk, buff_blocks[1]));
     buff_data[1] = BF_Block_GetData(buff_blocks[1]);
     // Copy data
-    memcpy(block_data[1], block_data[0], BF_BLOCK_SIZE);
+    memcpy(buff_data[1], buff_data[0], BF_BLOCK_SIZE);
     // Dirty and unpin
-    BF_Block_SetDirty(block_data[1]);
-    CHK_BF_ERR(BF_UnpinBlock(block_data[0]));
-    CHK_BF_ERR(BF_UnpinBlock(block_data[1]));
+    BF_Block_SetDirty(buff_blocks[1]);
+    CHK_BF_ERR(BF_UnpinBlock(buff_blocks[0]));
+    CHK_BF_ERR(BF_UnpinBlock(buff_blocks[1]));
   }
 
   // Main while loop (for step 1, quicksort)
@@ -219,12 +214,59 @@ SR_ErrorCode SR_SortedFile(
       CHK_BF_ERR(BF_GetBlock(input_fileDesc, curr_group*bufferSize + i, buff_blocks[i]));
       buff_data[i] = BF_Block_GetData(buff_blocks[i]);
     }
-    // Call quicksort
-    
+    // Get total number of records in the buffers
+    tot_records = 0;
+    for (int i = 0; i < bufferSize; i++) {
+      int buff_recs = 0;
+      memcpy(&buff_recs, buff_data[i], sizeof(int));
+      tot_records += buff_recs;
+    }
 
+    // Call quicksort
+    int low = 0;
+    int high = tot_records - 1;
+    block_quicksort(buff_data, fieldNo, low, high);
+    // Dirty and unpin
+    for (int i = 0; i < bufferSize; i++) {
+      BF_Block_SetDirty(buff_blocks[i]);
+      CHK_BF_ERR(BF_UnpinBlock(buff_blocks[i]));
+    }
 
     // Move on to the next group
     curr_group++;
+  }
+
+  // NA KANW LIGO TA curr_group*bufferSize + i, AN ISXIOUN 
+  // Now call quicksort for the remaining blocks (input_file_block_number % bufferSize) EKSIGISI
+  rem_block_num = input_file_block_number % bufferSize;
+  if (rem_block_num != 0) {
+    // Load remaining blocks into buffers
+    for (int i = 0; i < rem_block_num; i++) {
+      CHK_BF_ERR(BF_GetBlock(input_fileDesc, curr_group*bufferSize + i, buff_blocks[i]));
+      buff_data[i] = BF_Block_GetData(buff_blocks[i]);
+    
+    // Load blocks into buffers
+    for (int i = 0; i < bufferSize; i++) {
+      CHK_BF_ERR(BF_GetBlock(input_fileDesc, curr_group*bufferSize + i, buff_blocks[i]));
+      buff_data[i] = BF_Block_GetData(buff_blocks[i]);
+    }
+    // Get total number of records in the buffers
+    tot_records = 0;
+    for (int i = 0; i < bufferSize; i++) {
+      int buff_recs = 0;
+      memcpy(&buff_recs, buff_data[i], sizeof(int));
+      tot_records += buff_recs;
+    }
+
+    // Call quicksort
+    int low = 0;
+    int high = tot_records - 1;
+    block_quicksort(buff_data, fieldNo, low, high);
+    // Dirty and unpin
+    for (int i = 0; i < bufferSize; i++) {
+      BF_Block_SetDirty(buff_blocks[i]);
+      CHK_BF_ERR(BF_UnpinBlock(buff_blocks[i]));
+    }
   }
 
   // Create the sorted, output file
@@ -232,6 +274,7 @@ SR_ErrorCode SR_SortedFile(
   // Check if bufferSize is greater than the number of blocks in the input file
   // in that case, step 2 is not needed
 
+  // EDW NA VALW IF KAI COPY-EXIT I NA VALOUME IF STA DIKA SOU??
 
 
 

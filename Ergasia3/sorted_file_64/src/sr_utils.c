@@ -41,6 +41,27 @@ int record_cmp(int fieldNo, Record record1, Record record2) {
     return -2;
 }
 
+// Function that returns the nth (input) record from an array of blocks (buffers) 
+// If n is greater than the number of records in a block, then go to the next one in the array
+// N will never be out of bounds (cause quicksort)
+Record* get_nth_record(char* buffer_data[], int n) {
+    int buffer_i = 0;
+    bool found = false;
+    // Find the block where the record is, while making n in-bounds for that buffer
+    while (!found) {
+        int rec_number = 0; // H MPORW KAI = (int*)*buffer_data[buffer_i] ISWS KALITERO
+        memcpy(&rec_number, buffer_data[buffer_i], sizeof(int));
+        if (n > rec_number) {
+            n = n - rec_number;
+            buffer_i++;
+        }
+        else
+            found = true;
+    }
+    Record* data[] = buffer_data[buffer_i] + sizeof(int);
+    return &data[n];
+}
+
 void record_swap(Record* a, Record* b) {
     Record t = *a;
     *a = *b;

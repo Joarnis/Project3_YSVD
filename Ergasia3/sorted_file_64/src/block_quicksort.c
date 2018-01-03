@@ -21,40 +21,20 @@ void block_quicksort(char* buffer_data[], int fieldNo, int low, int high) {
 }
 
 void block_partition(char* buffer_data[], int fieldNo, int low, int high) {
-    Record* pivot = get_nth_record(buffer_data[], high); 
-     
-    int leftwall = low;
-    Record* leftwall_rec = get_nth_record(buffer_data[], leftwall);
+    Record* pivot = get_nth_record(buffer_data, high); 
+    int leftwall = low - 1;
 
-    for (int i = low; i < high; i++) {
-        Record curr_rec = get_nth_record(buffer_data[], i);
-        if (A[i] < pivot) {
-            record_swap(A[i], A[leftwall])
-            leftwall = leftwall + 1
+    for (int i = low; i < high - 1; i++) {
+        Record* curr_rec = get_nth_record(buffer_data, i);
+        if (record_cmp(fieldNo, *curr_rec, *pivot) != 1) {
+            leftwall++;
+            Record* curr_leftwall_rec = get_nth_record(buffer_data, leftwall);        
+            record_swap(curr_rec, curr_leftwall_rec);
         }
     }
-    record_swap(pivot,A[leftwall]);
+    leftwall++;
+    Record* leftwall_rec = get_nth_record(buffer_data, leftwall);
+    record_swap(pivot,leftwall_rec);
 
     return leftwall;
-}
-
-// Function that returns the nth (input) record from an array of blocks (buffers) 
-// If n is greater than the number of records in a block, then go to the next one in the array
-// N will never be out of bounds (cause quicksort)
-Record* get_nth_record(char* buffer_data[], int n) {
-    int buffer_i = 0;
-    bool found = false;
-    // Find the block where the record is, while making n in-bounds for that buffer
-    while (!found) {
-        int rec_number = 0; // H MPORW KAI = (int*)*buffer_data[buffer_i] ISWS KALITERO
-        memcpy(&rec_number, buffer_data[buffer_i], sizeof(int));
-        if (n > rec_number) {
-            n = n - rec_number;
-            buffer_i++;
-        }
-        else
-            found = true;
-    }
-    Record* data = buffer_data[buffer_i] + sizeof(int);
-    return &data[n];
 }
