@@ -236,7 +236,7 @@ SR_ErrorCode SR_SortedFile(
     curr_group++;
   }
 
-  // NA KANW LIGO TA curr_group*bufferSize + i, AN ISXIOUN 
+  // NA KANW LIGO TA curr_group*bufferSize + i, AN ISXIOUN
   // Now call quicksort for the remaining blocks (input_file_block_number % bufferSize) EKSIGISI
   rem_block_num = input_file_block_number % bufferSize;
   if (rem_block_num != 0) {
@@ -244,7 +244,7 @@ SR_ErrorCode SR_SortedFile(
     for (int i = 0; i < rem_block_num; i++) {
       CHK_BF_ERR(BF_GetBlock(input_fileDesc, curr_group*bufferSize + i, buff_blocks[i]));
       buff_data[i] = BF_Block_GetData(buff_blocks[i]);
-    
+    }
     // Load blocks into buffers
     for (int i = 0; i < bufferSize; i++) {
       CHK_BF_ERR(BF_GetBlock(input_fileDesc, curr_group*bufferSize + i, buff_blocks[i]));
@@ -280,24 +280,6 @@ SR_ErrorCode SR_SortedFile(
 
 
   ////////////////part 2//////////////////
-// STO TEMP FILE TA PRWTA N EINAI TA BLOCKS POU EXEI TO INPUT FILE OPOU TA
-// SINEXOMENA N/BUFFERSIZE EINAI IDI TAKSINOMIMENA METAKSI TOUS
-// PX AN TA BLOCKS TOU INPUT EINAI 9 ME BUFFERSIZE 3
-// TA 1,2,3 EINAI TAKSINOMIMENA METAKSI TOUS
-// OPWS KAI TA 4,5,6 KAI TA 7,8,9
-// AN DEN DIAIREITAI AKRIVWS APLA MENOUN KAPOIA STO TELOS
-// TA XW ME MEGALA GRAMMATA GIA NA THIMITHOUME NA TA SVISOUME AYTA OK?
-
-// SIMANTIKO
-// STIN ARXI TOU KATHE BLOCK IPARXEI ENAS INT POU LEEI POSA RECORDS IPARXOUN MESA STO BLOCK
-// DEN KSERW AN PREPEI NA XRISIMOPOIISOUME ALLA METADATA
-// AFOU TA DEDOMENA KATHE BLOCK EINAI STANDARD
-// EPISIS MPOROUME MONO NA XRISIMOPOIISOUME TA BUFFER BLOCKS, OTAN FERNOUME KATI TO FORTWNOUME EKEI
-
-// PARE AUTO EDW KANE OTI THES
-//OTAN ARXISEI TO PART 2 STO TEMP FILE THA IPARXOUN ALLOCATED BLOCKS ISA ME TON ARITHMO TWN BLOCKS STO ARXIKO ARXEIO
-// APO KEI KAI PERA KANE OTI THES
-
   //the temp file will have two times the Blocks of the original file
   //we know that so we will allocate them now
   //we wont need to create anymore
@@ -307,31 +289,26 @@ SR_ErrorCode SR_SortedFile(
     CHK_BF_ERR(BF_UnpinBlock(temp_block));
   }
 
-  int fieldNo_pass;//depending on fieldNo we need to pass at the start fieldNo_pass bits
   int fieldNo_size;//size of what we are sorting
 
   if(fieldNo==0){
-    fieldNo_pass=0;
     fieldNo_size=sizeof(int);
   }
   else if(fieldNo==1){
-    fieldNo_pass=sizeof(int);
     fieldNo_size=15*sizeof(char);
   }
   else if(fieldNo==2){
-    fieldNo_pass=sizeof(int)+15*sizeof(char);
     fieldNo_size=20*sizeof(char);
   }
   else{
-    fieldNo_pass=sizeof(int)+15*sizeof(char)+20*sizeof(char);
     fieldNo_size=20*sizeof(char);
   }
 
   int j=0;//helps as pass the groups we saw
-  int num_of_blocks=bufferSize; //the next block will be that far and the block groups will have that many blocks
+  int num_of_blocks=bufferSize; //the next block group will be that far and the block groups will have that many blocks
   int num_of_block_groups=input_file_block_number/bufferSize;//number of groups
 
-  if(input_file_block_number/bufferSize==0)
+  if(input_file_block_number%bufferSize==0)
     num_of_block_groups++;                  //if there is an incomplete group count it as a whole
 
   int groups_remain=num_of_block_groups;
@@ -380,7 +357,6 @@ SR_ErrorCode SR_SortedFile(
 
       for(int i=0;i<bufferSize-1;i++){
         memcpy(records_in_block[i],buff_data[i],sizeof(int));
-        memcpy(info[i],buff_data[i] + fieldNo_pass,fieldNo_size);//pedio analoga me to fieldNo apo to prwto record
       }
 
       while(1){
