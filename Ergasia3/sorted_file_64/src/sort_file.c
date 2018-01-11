@@ -286,6 +286,9 @@ SR_ErrorCode SR_SortedFile(
   //and beacuse of the way we use them this will simplify the process
   for(int i=0;i<input_file_block_number;i++){
     CHK_BF_ERR(BF_AllocateBlock(temp_fileDesk, temp_block));
+    ///
+    //ARIXKOPOIHSE TON ARITHMO TWN BLOCKS
+    ///
     CHK_BF_ERR(BF_UnpinBlock(temp_block));
   }
 
@@ -308,21 +311,18 @@ SR_ErrorCode SR_SortedFile(
   int num_of_blocks=bufferSize; //the next block group will be that far and the block groups will have that many blocks
   int num_of_block_groups=input_file_block_number/bufferSize;//number of groups
 
-  if(input_file_block_number%bufferSize==0)
+  if(input_file_block_number%bufferSize!=0)
     num_of_block_groups++;                  //if there is an incomplete group count it as a whole
 
   int groups_remain=num_of_block_groups;
   int fl=0;//depending on the number we see at the begining or at the middle
-  int blocknum[bufferSize]; //the number of the block we have at the buffer
+  int blocknum[bufferSize]; //the number of the block we have at the buffer //to peirazeis
   int new_group_num;
-  int last_record; //the last block might not be full
-  int smaller_record_location; //smaller record in a buffer block
-  char* smaller
-//MAX RECORDS
-  char *info[bufferSize-1];
-  int blocks_passed[bufferSize];
-  int records_passed[bufferSize];
-  char *records_in_block[bufferSize-1];
+
+  int blocks_passed[bufferSize];//to peirazeis
+  int records_passed[bufferSize];//to peirazeis
+
+  int records_in_block[bufferSize-1];
 
   for(int i=0;i<bufferSize;i++){
     int blocks_passed[i]=0;
@@ -359,25 +359,11 @@ SR_ErrorCode SR_SortedFile(
         memcpy(records_in_block[i],buff_data[i],sizeof(int));
       }
 
-      while(1){
-        strpcy(smaller_record,info[0]);
-        for(int i=1;i<bufferSize-1;i++){
-          if(strcmp(smaller_record,info[i])<0){
-            smaller_record_loc=i;
-            strpcy(smaller_record,info[i]);
-          }
-          //CHANGE THE RECORDS NUMBER
-        }
+    /////////////////////////////////
+    //EDW GINETAI TAKSINOMHSH////
 
-        if(records_passed[bufferSize-1]<max_records){
-          memcpy(buff_data[bufferSize-1],sizeof(int) + buff_data[smaller_record_loc] +records_passed[bufferSize-1]*sizeof(Record) ,fieldNo_size);
-          records_passed[bufferSize-1]++;
-          //SETDIRTY
-        }
-        else{
-          //NEXT BLOCK
-        }
-      }
+
+    ///////////////////////////////
 
       groups_remain-=bufferSize-1;
 
@@ -388,7 +374,7 @@ SR_ErrorCode SR_SortedFile(
     if(groups_remain==0){
       num_of_blocks*=bufferSize-1; //we merged bufferSize-1 groups with the same number of blocks
       new_group_num=num_of_block_groups/(bufferSize-1);
-      if(num_of_block_groups/(bufferSize-1)==0)
+      if(num_of_block_groups%(bufferSize-1)!=0)
         new_group_num++;
       num_of_block_groups=new_group_num;  //the same here
       groups_remain=num_of_block_groups; //we havent started merging the new groups yet
