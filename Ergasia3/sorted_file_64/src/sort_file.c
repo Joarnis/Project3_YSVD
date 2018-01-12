@@ -354,7 +354,7 @@ SR_ErrorCode SR_SortedFile(
     //EDW GINETAI TAKSINOMHSH////
     int tot_move_recs = 0
     for (int i=0; i < bufferSize; i++) {
-      memcpy(records_in_block[i], buff_data[i], sizeof(int));
+      memcpy(&records_in_block[i], buff_data[i], sizeof(int));
       tot_move_recs += records_in_block[i];
     }
     // Makes life easier (points to the blocks in memory, only it is a different pointer type)
@@ -400,7 +400,7 @@ SR_ErrorCode SR_SortedFile(
         buff_data[bufferSize-1] = BF_Block_GetData(buff_blocks[bufferSize-1]);
         blocks_passed[bufferSize-1]++;
         records_passed[bufferSize-1] = 0;
-        memcpy(records_in_block[bufferSize-1], buff_data[bufferSize-1], sizeof(int));
+        memcpy(&records_in_block[bufferSize-1], buff_data[bufferSize-1], sizeof(int));
         record_data[bufferSize-1] = buff_data[bufferSize-1] + sizeof(int);
       }  
         
@@ -414,7 +414,7 @@ SR_ErrorCode SR_SortedFile(
         buff_data[buff_i] = BF_Block_GetData(buff_blocks[min_record_i]);
         blocks_passed[min_record_i]++;
         records_passed[min_record_i] = 0;
-        memcpy(records_in_block[min_record_i], buff_data[min_record_i], sizeof(int));
+        memcpy(&records_in_block[min_record_i], buff_data[min_record_i], sizeof(int));
         record_data[min_record_i] = buff_data[min_record_i] + sizeof(int);
       }
     }
@@ -460,7 +460,34 @@ for (int i=0; i < bufferSize; i++)
 }
 
 SR_ErrorCode SR_PrintAllEntries(int fileDesc) {
-  // Your code goes here
+  BF_Block *block;
+  BF_Block_Init(&block);
+  Record record;
+  // Get number of blocks
+  int block_num;
+  CHK_BF_ERR(BF_GetBlockCounter(fileDesc, &block_num));
 
+  // File has benn opened, so no need to check for errors
+
+  // For each block
+  for (int i = 1; i < block_num; i++) {
+    CHK_BF_ERR(BF_GetBlock(fileDesc, i, block));
+    char* block_data = BF_Block_GetData(block);
+    // Get number of records in current block
+    int rec_num = 0;
+    memcpy(&rec_num, block_data, sizeof(int));
+    // For each record in the block, get and print record
+    for (int j = 0; j < rec_num; j++) {
+      memcpy(&record, block_data + sizeof(int) + j*sizeof(Record),
+          sizeof(Record));
+      printf("%d,\"%s\",\"%s\",\"%s\"\n",
+          record.id, record.name, record.surname, record.city);
+    }
+    // Unpin block
+    CHK_BF_ERR(BF_UnpinBlock(block));
+  }
+
+  // Destroy block
+  BF_Block_Destroy(&block);
   return SR_OK;
 }

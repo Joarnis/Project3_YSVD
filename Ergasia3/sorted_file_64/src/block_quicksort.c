@@ -26,7 +26,7 @@ void block_partition(char* buffer_data[], int fieldNo, int low, int high) {
 
     for (int i = low; i < high - 1; i++) {
         Record* curr_rec = get_nth_record(buffer_data, i);
-        if (record_cmp(fieldNo, *curr_rec, *pivot) != 1) {
+        if (record_cmp(fieldNo, *curr_rec, *pivot) < 1) {
             leftwall++;
             Record* curr_leftwall_rec = get_nth_record(buffer_data, leftwall);        
             record_swap(curr_rec, curr_leftwall_rec);

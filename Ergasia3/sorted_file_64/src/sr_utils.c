@@ -51,7 +51,7 @@ Record* get_nth_record(char* buffer_data[], int n) {
     while (!found) {
         int rec_number = 0; // H MPORW KAI = (int*)*buffer_data[buffer_i] ISWS KALITERO
         memcpy(&rec_number, buffer_data[buffer_i], sizeof(int));
-        if (n > rec_number) {
+        if (n >= rec_number) {
             n = n - rec_number;
             buffer_i++;
         }
