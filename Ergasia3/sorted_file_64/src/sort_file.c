@@ -273,9 +273,9 @@ SR_ErrorCode SR_SortedFile(
   CHK_BF_ERR(BF_CreateFile(output_filename));
   // Check if bufferSize is greater than the number of blocks in the input file
   // in that case, step 2 is not needed
-
+  if (bufferSize >=)
   // EDW NA VALW IF KAI COPY-EXIT I NA VALOUME IF STA DIKA SOU??
-
+  // MIPWS NA GINOUN -1 GT IPARXOUN KAI METADATA
 
 
 
@@ -365,7 +365,7 @@ SR_ErrorCode SR_SortedFile(
       records_passed[i] = 0;
       record_data[i] = buff_data[i] + sizeof(int);
     }
-    
+
     // Main block group sorting and merge
     int min_record_i = -1;
     int curr_moves = 0;
@@ -405,17 +405,17 @@ SR_ErrorCode SR_SortedFile(
       }  
         
       // If there are no other records in the block of the min record, move to the next block
-      if (records_passed[buff_i] > records_in_block[buff_i]) {
+      if (records_passed[min_record_i] > records_in_block[min_record_i]) {
         // Unpin previous block
-        CHK_BF_ERR(BF_UnpinBlock(buff_blocks[buff_i]));
+        CHK_BF_ERR(BF_UnpinBlock(buff_blocks[min_record_i]));
         // Get next block
-        blocknum[buff_i]++;
-        CHK_BF_ERR(BF_GetBlock(temp_fileDesk, blocknum[buff_i], buff_blocks[buff_i]));
-        buff_data[buff_i] = BF_Block_GetData(buff_blocks[buff_i]);
-        blocks_passed[buff_i]++;
-        records_passed[buff_i] = 0;
-        memcpy(records_in_block[buff_i], buff_data[buff_i], sizeof(int));
-        record_data[buff_i] = buff_data[buff_i] + sizeof(int);
+        blocknum[min_record_i]++;
+        CHK_BF_ERR(BF_GetBlock(temp_fileDesk, blocknum[min_record_i], buff_blocks[min_record_i]));
+        buff_data[buff_i] = BF_Block_GetData(buff_blocks[min_record_i]);
+        blocks_passed[min_record_i]++;
+        records_passed[min_record_i] = 0;
+        memcpy(records_in_block[min_record_i], buff_data[min_record_i], sizeof(int));
+        record_data[min_record_i] = buff_data[min_record_i] + sizeof(int);
       }
     }
 
