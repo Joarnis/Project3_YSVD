@@ -1,3 +1,5 @@
+#include <string.h>
+
 #include "sort_file.h"
 
 // Compares records by comparing a specific field (input fieldNo)
