@@ -450,8 +450,8 @@ SR_ErrorCode SR_SortedFile(
 
   //PREPEI NA MPEI KAI TO COPY PASTE STO OUTPUT ARXEIO
 
-for (int i=0; i < bufferSize; i++)
-  BF_Block_Destroy(&buff_blocks[i]); // <- ELPIZW NA MIN THELEI PARENTHESEIS
+  for (int i=0; i < bufferSize; i++)
+    BF_Block_Destroy(&buff_blocks[i]); // <- ELPIZW NA MIN THELEI PARENTHESEIS
 
   // Use SR_closeFile to close the input file (SR_OpenFile was used to open it)
   SR_CloseFile(input_fileDesc);
