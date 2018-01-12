@@ -276,6 +276,12 @@ SR_ErrorCode SR_SortedFile(
     }
   }
 
+
+  SR_PrintAllEntries(temp_fileDesk);
+  return SR_OK;
+
+
+
   // Create the sorted, output file
   CHK_BF_ERR(BF_CreateFile(output_filename));
   // Check if bufferSize is greater than the number of blocks in the input file
@@ -450,6 +456,9 @@ SR_ErrorCode SR_SortedFile(
 
   //PREPEI NA MPEI KAI TO COPY PASTE STO OUTPUT ARXEIO
 
+  // Create the sorted, output file
+  CHK_BF_ERR(BF_CreateFile(output_filename));
+
   for (int i=0; i < bufferSize; i++)
     BF_Block_Destroy(&buff_blocks[i]); // <- ELPIZW NA MIN THELEI PARENTHESEIS
 
@@ -458,7 +467,7 @@ SR_ErrorCode SR_SortedFile(
 
 
   CHK_BF_ERR(BF_CloseFile(output_filename));
-  CHK_BF_ERR(BF_CloseFile(temp_file));
+  CHK_BF_ERR(BF_CloseFile(temp_fileDesk));
 
 
   return SR_OK;
@@ -475,7 +484,8 @@ SR_ErrorCode SR_PrintAllEntries(int fileDesc) {
   // File has benn opened, so no need to check for errors
 
   // For each block
-  for (int i = 1; i < block_num; i++) {
+  //AAAAAAAAAAAAAAAAAAAAAAA
+  for (int i = 0; i < block_num; i++) {
     CHK_BF_ERR(BF_GetBlock(fileDesc, i, block));
     char* block_data = BF_Block_GetData(block);
     // Get number of records in current block

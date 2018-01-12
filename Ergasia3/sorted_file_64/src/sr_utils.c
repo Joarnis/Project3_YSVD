@@ -46,7 +46,7 @@ int record_cmp(int fieldNo, Record record1, Record record2) {
 // N will never be out of bounds (cause quicksort)
 Record* get_nth_record(char* buffer_data[], int n) {
     int buffer_i = 0;
-    bool found = false;
+    int found = -1;
     // Find the block where the record is, while making n in-bounds for that buffer
     while (!found) {
         int rec_number = 0; // H MPORW KAI = (int*)*buffer_data[buffer_i] ISWS KALITERO
@@ -56,9 +56,9 @@ Record* get_nth_record(char* buffer_data[], int n) {
             buffer_i++;
         }
         else
-            found = true;
+            found = 1;
     }
-    Record* data[] = buffer_data[buffer_i] + sizeof(int);
+    Record* data = buffer_data[buffer_i] + sizeof(int);
     return &data[n];
 }
 
