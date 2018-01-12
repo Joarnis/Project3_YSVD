@@ -173,9 +173,9 @@ SR_ErrorCode SR_SortedFile(
 
   // Check for invalid bufferSize and fieldNo
   if (bufferSize < 3 || bufferSize > BF_BUFFER_SIZE)
-    return SR_WRONG_BUFFER_SIZE;
+    return SR_ERROR;
   if (fieldNo < 0 || fieldNo > 3)
-    return SR_WRONG_FIELD_NO;
+    return SR_ERROR;
 
   // Use SR_OpenFile to open the input sort file (only uses 1 block, unpins and destroys it after)
   int input_fileDesc = -1;
@@ -280,7 +280,7 @@ SR_ErrorCode SR_SortedFile(
   CHK_BF_ERR(BF_CreateFile(output_filename));
   // Check if bufferSize is greater than the number of blocks in the input file
   // in that case, step 2 is not needed
-  //if (bufferSize >=)
+  // if (bufferSize >=)
   // EDW NA VALW IF KAI COPY-EXIT I NA VALOUME IF STA DIKA SOU??
   // MIPWS NA GINOUN -1 GT IPARXOUN KAI METADATA
 
@@ -308,8 +308,6 @@ SR_ErrorCode SR_SortedFile(
     CHK_BF_ERR(BF_UnpinBlock(buff_blocks[0]));
     CHK_BF_ERR(BF_UnpinBlock(buff_blocks[1]));
   }
-
-  // EVGALA TA FIELD NO SIZE KLP
 
   int j=0;//helps as pass the groups we saw
   int num_of_blocks=bufferSize; //the next block group will be that far and the block groups will have that many blocks
