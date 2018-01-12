@@ -5,6 +5,7 @@
 // Compares records by comparing a specific field (input fieldNo)
 // Output is similar to strcmp (only with -2 output for input errors)
 int record_cmp(int fieldNo, Record record1, Record record2) {
+  printf("\n\nFDFDGDFGF\n" );
   // Only for comparing the id of the records
   if (fieldNo == 0) {
     if (record1.id < record2.id)
@@ -43,7 +44,7 @@ int record_cmp(int fieldNo, Record record1, Record record2) {
     return -2;
 }
 
-// Function that returns the nth (input) record from an array of blocks (buffers) 
+// Function that returns the nth (input) record from an array of blocks (buffers)
 // If n is greater than the number of records in a block, then go to the next one in the array
 // N will never be out of bounds (cause quicksort)
 Record* get_nth_record(char* buffer_data[], int n) {

@@ -18,7 +18,6 @@
 
 SR_ErrorCode SR_Init() {
   // Your code goes here
-
   return SR_OK;
 }
 
@@ -183,7 +182,6 @@ SR_ErrorCode SR_SortedFile(
   // Get the number of blocks in the input file
   int input_file_block_number;
   CHK_BF_ERR(BF_GetBlockCounter(input_fileDesc, &input_file_block_number));
-
   // Create and open a temp file
   char* temp_filename = "temp";
   CHK_BF_ERR(BF_CreateFile(temp_filename));
@@ -217,10 +215,12 @@ SR_ErrorCode SR_SortedFile(
   int curr_group = 0;
   while (curr_group*bufferSize < input_file_block_number) {
     // Load blocks into buffers
+
     for (int i = 0; i < bufferSize; i++) {
       CHK_BF_ERR(BF_GetBlock(input_fileDesc, curr_group*bufferSize + i, buff_blocks[i]));
       buff_data[i] = BF_Block_GetData(buff_blocks[i]);
     }
+
     // Get total number of records in the buffers
     int tot_records = 0;
     for (int i = 0; i < bufferSize; i++) {
@@ -228,6 +228,7 @@ SR_ErrorCode SR_SortedFile(
       memcpy(&buff_recs, buff_data[i], sizeof(int));
       tot_records += buff_recs;
     }
+
 
     // Call quicksort
     int low = 0;
@@ -454,13 +455,12 @@ SR_ErrorCode SR_SortedFile(
 
   }
   int output_fileDesk;
-  CHK_BF_ERR(BF_OpenFile(output_filename, &output_fileDesk));
 
   //PREPEI NA MPEI KAI TO COPY PASTE STO OUTPUT ARXEIO
 
   // Create the sorted, output file
-  CHK_BF_ERR(BF_CreateFile(output_filename));
-
+  SR_CreateFile(output_filename);
+  SR_OpenFile(output_filename, &output_fileDesk);
   for (int i=0; i < bufferSize; i++)
     BF_Block_Destroy(&buff_blocks[i]); // <- ELPIZW NA MIN THELEI PARENTHESEIS
 
@@ -468,7 +468,7 @@ SR_ErrorCode SR_SortedFile(
   SR_CloseFile(input_fileDesc);
 
 
-  CHK_BF_ERR(BF_CloseFile(output_fileDesk));
+  SR_CloseFile(output_fileDesk);
   CHK_BF_ERR(BF_CloseFile(temp_fileDesk));
 
 
@@ -487,7 +487,7 @@ SR_ErrorCode SR_PrintAllEntries(int fileDesc) {
 
   // For each block
   //AAAAAAAAAAAAAAAAAAAAAAA
-  for (int i = 0; i < block_num; i++) {
+  for (int i = 1; i < block_num; i++) {
     CHK_BF_ERR(BF_GetBlock(fileDesc, i, block));
     char* block_data = BF_Block_GetData(block);
     // Get number of records in current block
