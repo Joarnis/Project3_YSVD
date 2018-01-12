@@ -1,4 +1,11 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include "bf.h"
 #include "sort_file.h"
+#include "sr_utils.h"
+#include "block_quicksort.h"
 
 #define CHK_BF_ERR(call)      \
   {                           \
@@ -17,9 +24,9 @@ SR_ErrorCode SR_Init() {
 
 SR_ErrorCode SR_CreateFile(const char *fileName) {
   // Create and open file
-  CHK_BF_ERR(BF_CreateFile(filename));
+  CHK_BF_ERR(BF_CreateFile(fileName));
   int fileDesc = 0;
-  CHK_BF_ERR(BF_OpenFile(filename, &fileDesc));
+  CHK_BF_ERR(BF_OpenFile(fileName, &fileDesc));
 
   // Allocate the file's first block
   BF_Block* block;
@@ -172,10 +179,10 @@ SR_ErrorCode SR_SortedFile(
 
   // Use SR_OpenFile to open the input sort file (only uses 1 block, unpins and destroys it after)
   int input_fileDesc = -1;
-  SR_OpenFile(input_fileName, &input_fileDesc);
+  SR_OpenFile(input_filename, &input_fileDesc);
   // Get the number of blocks in the input file
   int input_file_block_number;
-  CHK_BF_ERR(BF_GetBlockCounter(tmp_fd, &input_file_block_number));
+  CHK_BF_ERR(BF_GetBlockCounter(input_fileDesc, &input_file_block_number));
 
   // Create and open a temp file
   char* temp_filename = "temp";
@@ -185,12 +192,12 @@ SR_ErrorCode SR_SortedFile(
 
   // Buffers and initialization
   BF_Block* buff_blocks[bufferSize];
-  char* buffer_data[bufferSize];
+  char* buff_data[bufferSize];
   for (int i = 0; i < bufferSize; i++)
     BF_Block_Init(&buff_blocks[i]); // <- ELPIZW NA MIN THELEI PARENTHESEIS
 
   // Then copy each block of the input file into the temporary one (only uses 2 buffer blocks)
-  for (int i = 0; i < input_file_block_number; i++) {
+  for (int i = 0; i < input_file_block_number-1; i++) {
     // Get block of input file
     CHK_BF_ERR(BF_GetBlock(input_fileDesc, i, buff_blocks[0]));
     buff_data[0] = BF_Block_GetData(buff_blocks[0]);
@@ -215,7 +222,7 @@ SR_ErrorCode SR_SortedFile(
       buff_data[i] = BF_Block_GetData(buff_blocks[i]);
     }
     // Get total number of records in the buffers
-    tot_records = 0;
+    int tot_records = 0;
     for (int i = 0; i < bufferSize; i++) {
       int buff_recs = 0;
       memcpy(&buff_recs, buff_data[i], sizeof(int));
@@ -238,7 +245,7 @@ SR_ErrorCode SR_SortedFile(
 
   // NA KANW LIGO TA curr_group*bufferSize + i, AN ISXIOUN
   // Now call quicksort for the remaining blocks (input_file_block_number % bufferSize) EKSIGISI
-  rem_block_num = input_file_block_number % bufferSize;
+  int rem_block_num = input_file_block_number % bufferSize;
   if (rem_block_num != 0) {
     // Load remaining blocks into buffers
     for (int i = 0; i < rem_block_num; i++) {
@@ -251,7 +258,7 @@ SR_ErrorCode SR_SortedFile(
       buff_data[i] = BF_Block_GetData(buff_blocks[i]);
     }
     // Get total number of records in the buffers
-    tot_records = 0;
+    int tot_records = 0;
     for (int i = 0; i < bufferSize; i++) {
       int buff_recs = 0;
       memcpy(&buff_recs, buff_data[i], sizeof(int));
@@ -273,7 +280,7 @@ SR_ErrorCode SR_SortedFile(
   CHK_BF_ERR(BF_CreateFile(output_filename));
   // Check if bufferSize is greater than the number of blocks in the input file
   // in that case, step 2 is not needed
-  if (bufferSize >=)
+  //if (bufferSize >=)
   // EDW NA VALW IF KAI COPY-EXIT I NA VALOUME IF STA DIKA SOU??
   // MIPWS NA GINOUN -1 GT IPARXOUN KAI METADATA
 
@@ -284,7 +291,7 @@ SR_ErrorCode SR_SortedFile(
   //we know that so we will allocate them now
   //we wont need to create anymore
   //and beacuse of the way we use them this will simplify the process
-  for (int i=0; i < input_file_block_number; i++) {
+  for (int i=1; i < input_file_block_number; i++) {
     // Get block of input file
     CHK_BF_ERR(BF_GetBlock(input_fileDesc, i, buff_blocks[0]));
     buff_data[0] = BF_Block_GetData(buff_blocks[0]);
