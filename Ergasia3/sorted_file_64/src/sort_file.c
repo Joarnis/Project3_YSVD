@@ -197,7 +197,7 @@ SR_ErrorCode SR_SortedFile(
     BF_Block_Init(&buff_blocks[i]); // <- ELPIZW NA MIN THELEI PARENTHESEIS
 
   // Then copy each block of the input file into the temporary one (only uses 2 buffer blocks)
-  for (int i = 0; i < input_file_block_number-1; i++) {
+  for (int i = 1; i < input_file_block_number; i++) {
     // Get block of input file
     CHK_BF_ERR(BF_GetBlock(input_fileDesc, i, buff_blocks[0]));
     buff_data[0] = BF_Block_GetData(buff_blocks[0]);
