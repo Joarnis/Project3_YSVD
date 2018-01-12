@@ -305,10 +305,10 @@ SR_ErrorCode SR_SortedFile(
     // Create a symmetric block into the temp file
     CHK_BF_ERR(BF_AllocateBlock(temp_fileDesk, buff_blocks[1]));
     buff_data[1] = BF_Block_GetData(buff_blocks[1]);
-    
+
     // Copy data
     memcpy(buff_data[1], buff_data[0], sizeof(int));
-    
+
     // Dirty and unpin
     BF_Block_SetDirty(buff_blocks[1]);
     CHK_BF_ERR(BF_UnpinBlock(buff_blocks[0]));
@@ -344,7 +344,7 @@ SR_ErrorCode SR_SortedFile(
 
     if(groups_remain==num_of_block_groups) {//starting block for sorting
       // EVALA BRACKET EDW
-      if(fl == 0) {   
+      if(fl == 0) {
         CHK_BF_ERR(BF_GetBlock(temp_fileDesk, input_file_block_number, buff_blocks[bufferSize-1]));
         buff_data[bufferSize-1]=BF_Block_GetData(buff_blocks[bufferSize-1]);
         blocknum[bufferSize-1]=input_file_block_number;
@@ -371,7 +371,7 @@ SR_ErrorCode SR_SortedFile(
     // Makes life easier (points to the blocks in memory, only it is a different pointer type)
     // AUTOOO NA SE RWTISW
     Record* record_data[bufferSize];
-    for (int i=0; i < bufferSize; i++) { 
+    for (int i=0; i < bufferSize; i++) {
       blocks_passed[i] = 0;
       records_passed[i] = 0;
       record_data[i] = buff_data[i] + sizeof(int);
@@ -383,12 +383,12 @@ SR_ErrorCode SR_SortedFile(
     while (curr_moves < tot_move_recs) {
       // Find min record value (using the comparison function)
       for (int buff_i=0; buff_i < bufferSize - 1; buff_i++) {
-        // If there are still records left in this group 
+        // If there are still records left in this group
         if (blocks_passed[buff_i] <= blocknum[buff_i]) {  // AUTO EDW EINAI LATHOS
           // Get first valid value
           if (min_record_i == -1)
             min_record_i = buff_i;
-          else if (record_cmp(fieldNo, record_data[buff_i][records_passed[buff_i]], 
+          else if (record_cmp(fieldNo, record_data[buff_i][records_passed[buff_i]],
                          record_data[min_record_i][records_passed[min_record_i]]) < 0)
             min_record_i = buff_i;
         }
@@ -413,8 +413,8 @@ SR_ErrorCode SR_SortedFile(
         records_passed[bufferSize-1] = 0;
         memcpy(&records_in_block[bufferSize-1], buff_data[bufferSize-1], sizeof(int));
         record_data[bufferSize-1] = buff_data[bufferSize-1] + sizeof(int);
-      }  
-        
+      }
+
       // If there are no other records in the block of the min record, move to the next block
       if (records_passed[min_record_i] > records_in_block[min_record_i]) {
         // Unpin previous block
@@ -431,10 +431,10 @@ SR_ErrorCode SR_SortedFile(
     }
 
 
-    
+
     ///////////////////////////////
 
-    
+
     groups_remain -= bufferSize-1;
 
     if (groups_remain == 0) {
@@ -453,6 +453,8 @@ SR_ErrorCode SR_SortedFile(
 
 
   }
+  int output_fileDesk;
+  CHK_BF_ERR(BF_OpenFile(output_filename, &output_fileDesk));
 
   //PREPEI NA MPEI KAI TO COPY PASTE STO OUTPUT ARXEIO
 
@@ -466,7 +468,7 @@ SR_ErrorCode SR_SortedFile(
   SR_CloseFile(input_fileDesc);
 
 
-  CHK_BF_ERR(BF_CloseFile(output_filename));
+  CHK_BF_ERR(BF_CloseFile(output_fileDesk));
   CHK_BF_ERR(BF_CloseFile(temp_fileDesk));
 
 
