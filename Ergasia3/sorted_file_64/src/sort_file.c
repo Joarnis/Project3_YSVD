@@ -359,7 +359,7 @@ SR_ErrorCode SR_SortedFile(
 
     /////////////////////////////////
     //EDW GINETAI TAKSINOMHSH////
-    int tot_move_recs = 0
+    int tot_move_recs = 0;
     for (int i=0; i < bufferSize; i++) {
       memcpy(&records_in_block[i], buff_data[i], sizeof(int));
       tot_move_recs += records_in_block[i];
@@ -385,7 +385,7 @@ SR_ErrorCode SR_SortedFile(
           if (min_record_i == -1)
             min_record_i = buff_i;
           else if (record_cmp(fieldNo, record_data[buff_i][records_passed[buff_i]], 
-                         record_data[min_record_i][records_passed[min_record_i]])) < 0)
+                         record_data[min_record_i][records_passed[min_record_i]]) < 0)
             min_record_i = buff_i;
         }
       }
@@ -418,7 +418,7 @@ SR_ErrorCode SR_SortedFile(
         // Get next block
         blocknum[min_record_i]++;
         CHK_BF_ERR(BF_GetBlock(temp_fileDesk, blocknum[min_record_i], buff_blocks[min_record_i]));
-        buff_data[buff_i] = BF_Block_GetData(buff_blocks[min_record_i]);
+        buff_data[min_record_i] = BF_Block_GetData(buff_blocks[min_record_i]);
         blocks_passed[min_record_i]++;
         records_passed[min_record_i] = 0;
         memcpy(&records_in_block[min_record_i], buff_data[min_record_i], sizeof(int));
