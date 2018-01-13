@@ -277,13 +277,11 @@ SR_ErrorCode SR_SortedFile(
   }
 
 
-  //SR_PrintAllEntries(temp_fileDesc);
-  //return SR_OK;
+
 
 
 
   // Create the sorted, output file
-  CHK_BF_ERR(BF_CreateFile(output_filename));
   // Check if bufferSize is greater than the number of blocks in the input file
   // in that case, step 2 is not needed
   // if (bufferSize >=)
@@ -314,12 +312,12 @@ SR_ErrorCode SR_SortedFile(
     CHK_BF_ERR(BF_UnpinBlock(buff_blocks[0]));
     CHK_BF_ERR(BF_UnpinBlock(buff_blocks[1]));
   }
-
+  int blocks_to_output=input_file_block_number-1;
   int j=0;//helps as pass the groups we saw
   int num_of_blocks=bufferSize; //the next block group will be that far and the block groups will have that many blocks
-  int num_of_block_groups=input_file_block_number/bufferSize;//number of groups
+  int num_of_block_groups=blocks_to_output/bufferSize;//number of groups
 
-  if(input_file_block_number%bufferSize!=0)
+  if(blocks_to_output%bufferSize!=0)
     num_of_block_groups++;                  //if there is an incomplete group count it as a whole
 
   int groups_remain=num_of_block_groups;
@@ -328,25 +326,36 @@ SR_ErrorCode SR_SortedFile(
   int new_group_num;
 
 
-  int blocks_passed[bufferSize];
-  int records_passed[bufferSize];
-  int records_in_block[bufferSize];
-
+  int blocks_passed[bufferSize];  //how many we passed in group
+  int records_passed[bufferSize];  //how many records we passed in block
+  int records_in_block[bufferSize];//how many records does a block have
+  int set_unused[bufferSize-1];
+/*  for(int i=0;i<bufferSize;i++)
+  {
+    blocks_passed[i]=0;
+    records_passed[i]=0;
+    set_unused[i]=0;                //OTAN ARXIKOPOIW AUTA VGAZEI MEMORY MAP
+  }
+  for(int i=0;i<bufferSize-1;i++)
+  {
+    set_unused[i]=0;
+  }*/
+  Record* record_data[bufferSize];
+  int max_records=17;
   while (1) {
     for (int i=0; i < bufferSize-1; i++) {//take the first block from the first bufferSize-1 block groups
       if (i == num_of_block_groups)
         break;
-      CHK_BF_ERR(BF_GetBlock(temp_fileDesc, input_file_block_number*fl + num_of_blocks*(i+j), buff_blocks[i]));
+      CHK_BF_ERR(BF_GetBlock(temp_fileDesc, blocks_to_output*fl + num_of_blocks*(i+j), buff_blocks[i]));
       buff_data[i] = BF_Block_GetData(buff_blocks[i]);
-      blocknum[i] = input_file_block_number*fl + num_of_blocks*(i+j);
+      blocknum[i] = blocks_to_output*fl + num_of_blocks*(i+j);
     }
 
     if(groups_remain==num_of_block_groups) {//starting block for sorting
-      // EVALA BRACKET EDW
       if(fl == 0) {
-        CHK_BF_ERR(BF_GetBlock(temp_fileDesc, input_file_block_number, buff_blocks[bufferSize-1]));
+        CHK_BF_ERR(BF_GetBlock(temp_fileDesc, blocks_to_output, buff_blocks[bufferSize-1]));
         buff_data[bufferSize-1]=BF_Block_GetData(buff_blocks[bufferSize-1]);
-        blocknum[bufferSize-1]=input_file_block_number;
+        blocknum[bufferSize-1]=blocks_to_output;
       }
       else {
         CHK_BF_ERR(BF_GetBlock(temp_fileDesc , 0, buff_blocks[bufferSize-1]));
@@ -355,88 +364,88 @@ SR_ErrorCode SR_SortedFile(
       }
     }
 
-    // EXIT HERE <---
     if (num_of_block_groups <= bufferSize-1) {
       break;
     }
-
     /////////////////////////////////
     //EDW GINETAI TAKSINOMHSH////
-    int tot_move_recs = 0;
+    //take how many records a block has
     for (int i=0; i < bufferSize; i++) {
       memcpy(&records_in_block[i], buff_data[i], sizeof(int));
-      tot_move_recs += records_in_block[i];
-    }
-    // Makes life easier (points to the blocks in memory, only it is a different pointer type)
-    // AUTOOO NA SE RWTISW
-    Record* record_data[bufferSize];
-    for (int i=0; i < bufferSize; i++) {
-      blocks_passed[i] = 0;
-      records_passed[i] = 0;
       record_data[i] = buff_data[i] + sizeof(int);
     }
+    int min_record_i = 0;
 
-    // Main block group sorting and merge
-    int min_record_i = -1;
-    int curr_moves = 0;
-    while (curr_moves < tot_move_recs) {
-      // Find min record value (using the comparison function)
-      for (int buff_i=0; buff_i < bufferSize - 1; buff_i++) {
-        // If there are still records left in this group
-        if (blocks_passed[buff_i] <= blocknum[buff_i]) {  // AUTO EDW EINAI LATHOS
-          // Get first valid value
-          if (min_record_i == -1)
-            min_record_i = buff_i;
-          else if (record_cmp(fieldNo, record_data[buff_i][records_passed[buff_i]],
-                         record_data[min_record_i][records_passed[min_record_i]]) < 0)
-            min_record_i = buff_i;
+    while(1){
+
+      for (int buff_i=0; buff_i < bufferSize - 1; buff_i++) {//min found
+
+        if(set_unused[buff_i]==1)
+          continue;
+          printf("\n\n\nnfdfdsfsdfsdfds\n");
+
+        if(record_cmp(fieldNo,record_data[buff_i][records_passed[buff_i]],
+        record_data[min_record_i][records_passed[min_record_i]])<0){
+            min_record_i=buff_i;
+            printf("\n\n\nnfdfdsfsdfsdfds\n");
+
         }
       }
+        //copy the whole record to bufferSize-1
+        record_data[bufferSize-1][records_passed[bufferSize-1]]
+        = record_data[min_record_i][records_passed[min_record_i]];
+        //we passed one in the min_block and one in the block we copy it
+        records_passed[bufferSize-1]++;
+        records_passed[min_record_i]++;
 
-      // Copy min record value to output buffer
-      record_data[bufferSize-1][records_passed[bufferSize-1]] = record_data[min_record_i][records_passed[min_record_i]];
-      records_passed[bufferSize-1]++;
-      records_passed[min_record_i]++;
-      curr_moves++;
 
-      // Check if output buffer is full (get next block)
-      if (records_passed[bufferSize-1] > records_in_block[bufferSize-1]) {
-        // Dirty and Unpin previous block
-        BF_Block_SetDirty(buff_blocks[bufferSize-1]);
-        CHK_BF_ERR(BF_UnpinBlock(buff_blocks[bufferSize-1]));
-        // Get next block
-        blocknum[bufferSize-1]++;
-        CHK_BF_ERR(BF_GetBlock(temp_fileDesc, blocknum[bufferSize-1], buff_blocks[bufferSize-1]));
-        buff_data[bufferSize-1] = BF_Block_GetData(buff_blocks[bufferSize-1]);
-        blocks_passed[bufferSize-1]++;
-        records_passed[bufferSize-1] = 0;
-        memcpy(&records_in_block[bufferSize-1], buff_data[bufferSize-1], sizeof(int));
-        record_data[bufferSize-1] = buff_data[bufferSize-1] + sizeof(int);
-      }
+        // Check if output buffer is full (get next block)
+        //TSEKARE AN TA IF ME TA > EINAI SWSTA I THELEI KATI ALLO
+        if (records_passed[bufferSize-1] > records_in_block[bufferSize-1]){
+          if(blocks_passed[bufferSize-1] > blocks_to_output){
+            break;//ta valame ola ftasame sto teleutaio
+          }
+          // Dirty and Unpin previous block
+          BF_Block_SetDirty(buff_blocks[bufferSize-1]);
+          CHK_BF_ERR(BF_UnpinBlock(buff_blocks[bufferSize-1]));
+          // Get next block
+          blocknum[bufferSize-1]++;
+          CHK_BF_ERR(BF_GetBlock(temp_fileDesc, blocknum[bufferSize-1], buff_blocks[bufferSize-1]));
+          blocks_passed[bufferSize-1]++;//we passed one block
+          buff_data[bufferSize-1] = BF_Block_GetData(buff_blocks[bufferSize-1]);
+          memcpy(&records_in_block[bufferSize-1], buff_data[bufferSize-1], sizeof(int));
+          record_data[bufferSize-1] = buff_data[bufferSize-1] + sizeof(int);
+        }
 
-      // If there are no other records in the block of the min record, move to the next block
-      if (records_passed[min_record_i] > records_in_block[min_record_i]) {
-        // Unpin previous block
-        CHK_BF_ERR(BF_UnpinBlock(buff_blocks[min_record_i]));
-        // Get next block
-        blocknum[min_record_i]++;
-        CHK_BF_ERR(BF_GetBlock(temp_fileDesc, blocknum[min_record_i], buff_blocks[min_record_i]));
-        buff_data[min_record_i] = BF_Block_GetData(buff_blocks[min_record_i]);
-        blocks_passed[min_record_i]++;
-        records_passed[min_record_i] = 0;
-        memcpy(&records_in_block[min_record_i], buff_data[min_record_i], sizeof(int));
-        record_data[min_record_i] = buff_data[min_record_i] + sizeof(int);
-      }
+        // If there are no other records in the block of the min record, move to the next block
+        if (records_passed[min_record_i] > records_in_block[min_record_i]) {
+          if(blocks_passed[min_record_i] == num_of_block_groups-1)
+            set_unused[min_record_i]=1;//ftasame sto telos autou tou group opote den to xreisimopoioume mexri to telos ths while
+          // Unpin previous block
+          CHK_BF_ERR(BF_UnpinBlock(buff_blocks[min_record_i]));
+          // Get next block
+          blocknum[min_record_i]++;
+          CHK_BF_ERR(BF_GetBlock(temp_fileDesc, blocknum[min_record_i], buff_blocks[min_record_i]));
+          blocks_passed[min_record_i]++;
+          records_passed[min_record_i] = 0;
+          buff_data[min_record_i] = BF_Block_GetData(buff_blocks[min_record_i]);
+          memcpy(&records_in_block[min_record_i], buff_data[min_record_i], sizeof(int));
+          record_data[min_record_i] = buff_data[min_record_i] + sizeof(int);
+        }
+
     }
-
-
-
     ///////////////////////////////
-
 
     groups_remain -= bufferSize-1;
 
     if (groups_remain == 0) {
+    /*  for(int i=0;i<bufferSize;i++)
+      {
+        blocks_passed[i]=0;
+        records_passed[i]=0;
+      }
+      for(int i=0;i<bufferSize-1;i++)
+        set_unused[i]=0;*/
       num_of_blocks*=bufferSize-1; //we merged bufferSize-1 groups with the same number of blocks
       new_group_num=num_of_block_groups/(bufferSize-1);
       if(num_of_block_groups%(bufferSize-1)!=0)
@@ -452,23 +461,26 @@ SR_ErrorCode SR_SortedFile(
 
 
   }
+//  SR_PrintAllEntries(temp_fileDesc );
+
+
   int output_fileDesc;
 
   //PREPEI NA MPEI KAI TO COPY PASTE STO OUTPUT ARXEIO
 
   // Create the sorted, output file
-  SR_CreateFile(output_filename);
-  SR_OpenFile(output_filename, &output_fileDesc);
+//  SR_CreateFile(output_filename);
+//  SR_OpenFile(output_filename, &output_fileDesc);
   for (int i=0; i < bufferSize; i++)
     BF_Block_Destroy(&buff_blocks[i]); // <- ELPIZW NA MIN THELEI PARENTHESEIS
 
   // Use SR_closeFile to close the input file (SR_OpenFile was used to open it)
-  SR_CloseFile(input_fileDesc);
+//  SR_CloseFile(input_fileDesc);
+  SR_PrintAllEntries(temp_fileDesc);
 
-
-  SR_CloseFile(output_fileDesc);
-  CHK_BF_ERR(BF_CloseFile(temp_fileDesc));
-
+//  SR_CloseFile(output_fileDesc);
+//  CHK_BF_ERR(BF_CloseFile(temp_fileDesc));
+  remove("temp");
 
   return SR_OK;
 }
@@ -485,7 +497,7 @@ SR_ErrorCode SR_PrintAllEntries(int fileDesc) {
 
   // For each block
   //AAAAAAAAAAAAAAAAAAAAAAA
-  for (int i = 1; i < block_num; i++) {
+  for (int i = 0; i < block_num; i++) {
     CHK_BF_ERR(BF_GetBlock(fileDesc, i, block));
     char* block_data = BF_Block_GetData(block);
     // Get number of records in current block
