@@ -1,3 +1,5 @@
+#include <stdio.h>
+
 #include "block_quicksort.h"
 #include "sort_file.h"
 #include "sr_utils.h"
@@ -14,7 +16,9 @@
 
 void block_quicksort(char* buffer_data[], int fieldNo, int low, int high) {
     if (low < high) {
+        printf("before pivot");
         int pivot_location = block_partition(buffer_data, fieldNo, low, high);
+        printf("after pivot");
         // Call recursively for before and after pivot location
         block_quicksort(buffer_data, fieldNo, low, pivot_location - 1);
         block_quicksort(buffer_data, fieldNo, pivot_location + 1, high);
@@ -27,6 +31,7 @@ int block_partition(char* buffer_data[], int fieldNo, int low, int high) {
 
     for (int i = low; i < high - 1; i++) {
         Record* curr_rec = get_nth_record(buffer_data, i);
+        printf("in 5 rec_cmp is called");
         if (record_cmp(fieldNo, *curr_rec, *pivot) < 1) {
             leftwall++;
             Record* curr_leftwall_rec = get_nth_record(buffer_data, leftwall);

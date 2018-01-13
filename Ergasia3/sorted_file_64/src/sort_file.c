@@ -210,6 +210,7 @@ SR_ErrorCode SR_SortedFile(
     CHK_BF_ERR(BF_UnpinBlock(buff_blocks[1]));
   }
 
+
   // Main while loop (for step 1, quicksort)
   // Sort blocks in groups of bufferSize
   int curr_group = 0;
@@ -229,7 +230,7 @@ SR_ErrorCode SR_SortedFile(
       tot_records += buff_recs;
     }
 
-
+    printf("Calling quicksort\n");
     // Call quicksort
     int low = 0;
     int high = tot_records - 1;

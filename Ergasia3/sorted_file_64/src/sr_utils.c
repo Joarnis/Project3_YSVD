@@ -48,6 +48,7 @@ int record_cmp(int fieldNo, Record record1, Record record2) {
 // If n is greater than the number of records in a block, then go to the next one in the array
 // N will never be out of bounds (cause quicksort)
 Record* get_nth_record(char* buffer_data[], int n) {
+    printf("getting record");
     int buffer_i = 0;
     int found = -1;
     // Find the block where the record is, while making n in-bounds for that buffer
