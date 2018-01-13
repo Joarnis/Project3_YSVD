@@ -185,8 +185,8 @@ SR_ErrorCode SR_SortedFile(
   // Create and open a temp file
   char* temp_filename = "temp";
   CHK_BF_ERR(BF_CreateFile(temp_filename));
-  int temp_fileDesk = -1;
-  CHK_BF_ERR(BF_OpenFile(temp_filename, &temp_fileDesk));
+  int temp_fileDesc = -1;
+  CHK_BF_ERR(BF_OpenFile(temp_filename, &temp_fileDesc));
 
   // Buffers and initialization
   BF_Block* buff_blocks[bufferSize];
@@ -200,7 +200,7 @@ SR_ErrorCode SR_SortedFile(
     CHK_BF_ERR(BF_GetBlock(input_fileDesc, i, buff_blocks[0]));
     buff_data[0] = BF_Block_GetData(buff_blocks[0]);
     // Create block into the temp file
-    CHK_BF_ERR(BF_AllocateBlock(temp_fileDesk, buff_blocks[1]));
+    CHK_BF_ERR(BF_AllocateBlock(temp_fileDesc, buff_blocks[1]));
     buff_data[1] = BF_Block_GetData(buff_blocks[1]);
     // Copy data
     memcpy(buff_data[1], buff_data[0], BF_BLOCK_SIZE);
@@ -210,15 +210,15 @@ SR_ErrorCode SR_SortedFile(
     CHK_BF_ERR(BF_UnpinBlock(buff_blocks[1]));
   }
 
-
+  int temp_block_num = input_file_block_number - 1;
   // Main while loop (for step 1, quicksort)
   // Sort blocks in groups of bufferSize
   int curr_group = 0;
-  while (curr_group*bufferSize < input_file_block_number) {
+  while (bufferSize + curr_group*bufferSize < temp_block_num) {
     // Load blocks into buffers
 
     for (int i = 0; i < bufferSize; i++) {
-      CHK_BF_ERR(BF_GetBlock(input_fileDesc, curr_group*bufferSize + i, buff_blocks[i]));
+      CHK_BF_ERR(BF_GetBlock(temp_fileDesc, curr_group*bufferSize + i, buff_blocks[i]));
       buff_data[i] = BF_Block_GetData(buff_blocks[i]);
     }
 
@@ -227,10 +227,11 @@ SR_ErrorCode SR_SortedFile(
     for (int i = 0; i < bufferSize; i++) {
       int buff_recs = 0;
       memcpy(&buff_recs, buff_data[i], sizeof(int));
+      printf("buff_recs num is %d\n", buff_recs);
       tot_records += buff_recs;
     }
 
-    printf("Calling quicksort\n");
+    printf("Calling quicksort with total records %d\n", tot_records);
     // Call quicksort
     int low = 0;
     int high = tot_records - 1;
@@ -247,16 +248,16 @@ SR_ErrorCode SR_SortedFile(
 
   // NA KANW LIGO TA curr_group*bufferSize + i, AN ISXIOUN
   // Now call quicksort for the remaining blocks (input_file_block_number % bufferSize) EKSIGISI
-  int rem_block_num = input_file_block_number % bufferSize;
+  int rem_block_num = temp_block_num % bufferSize;
   if (rem_block_num != 0) {
     // Load remaining blocks into buffers
     for (int i = 0; i < rem_block_num; i++) {
-      CHK_BF_ERR(BF_GetBlock(input_fileDesc, curr_group*bufferSize + i, buff_blocks[i]));
+      CHK_BF_ERR(BF_GetBlock(temp_fileDesc, curr_group*bufferSize + i, buff_blocks[i]));
       buff_data[i] = BF_Block_GetData(buff_blocks[i]);
     }
     // Load blocks into buffers
     for (int i = 0; i < bufferSize; i++) {
-      CHK_BF_ERR(BF_GetBlock(input_fileDesc, curr_group*bufferSize + i, buff_blocks[i]));
+      CHK_BF_ERR(BF_GetBlock(temp_fileDesc, curr_group*bufferSize + i, buff_blocks[i]));
       buff_data[i] = BF_Block_GetData(buff_blocks[i]);
     }
     // Get total number of records in the buffers
@@ -279,7 +280,7 @@ SR_ErrorCode SR_SortedFile(
   }
 
 
-  SR_PrintAllEntries(temp_fileDesk);
+  SR_PrintAllEntries(temp_fileDesc);
   return SR_OK;
 
 
@@ -305,7 +306,7 @@ SR_ErrorCode SR_SortedFile(
     buff_data[0] = BF_Block_GetData(buff_blocks[0]);
 
     // Create a symmetric block into the temp file
-    CHK_BF_ERR(BF_AllocateBlock(temp_fileDesk, buff_blocks[1]));
+    CHK_BF_ERR(BF_AllocateBlock(temp_fileDesc, buff_blocks[1]));
     buff_data[1] = BF_Block_GetData(buff_blocks[1]);
 
     // Copy data
@@ -330,16 +331,15 @@ SR_ErrorCode SR_SortedFile(
   int new_group_num;
 
 
-  int blocks_passed[bufferSize];//to peirazeis
-  int records_passed[bufferSize];//to peirazeis
-  // EVGALA TO -1
+  int blocks_passed[bufferSize];
+  int records_passed[bufferSize];
   int records_in_block[bufferSize];
 
   while (1) {
     for (int i=0; i < bufferSize-1; i++) {//take the first block from the first bufferSize-1 block groups
       if (i == num_of_block_groups)
         break;
-      CHK_BF_ERR(BF_GetBlock(temp_fileDesk, input_file_block_number*fl + num_of_blocks*(i+j), buff_blocks[i]));
+      CHK_BF_ERR(BF_GetBlock(temp_fileDesc, input_file_block_number*fl + num_of_blocks*(i+j), buff_blocks[i]));
       buff_data[i] = BF_Block_GetData(buff_blocks[i]);
       blocknum[i] = input_file_block_number*fl + num_of_blocks*(i+j);
     }
@@ -347,12 +347,12 @@ SR_ErrorCode SR_SortedFile(
     if(groups_remain==num_of_block_groups) {//starting block for sorting
       // EVALA BRACKET EDW
       if(fl == 0) {
-        CHK_BF_ERR(BF_GetBlock(temp_fileDesk, input_file_block_number, buff_blocks[bufferSize-1]));
+        CHK_BF_ERR(BF_GetBlock(temp_fileDesc, input_file_block_number, buff_blocks[bufferSize-1]));
         buff_data[bufferSize-1]=BF_Block_GetData(buff_blocks[bufferSize-1]);
         blocknum[bufferSize-1]=input_file_block_number;
       }
       else {
-        CHK_BF_ERR(BF_GetBlock(temp_fileDesk , 0, buff_blocks[bufferSize-1]));
+        CHK_BF_ERR(BF_GetBlock(temp_fileDesc , 0, buff_blocks[bufferSize-1]));
         buff_data[bufferSize-1]=BF_Block_GetData(buff_blocks[bufferSize-1]);
         blocknum[bufferSize-1]=0;
       }
@@ -409,7 +409,7 @@ SR_ErrorCode SR_SortedFile(
         CHK_BF_ERR(BF_UnpinBlock(buff_blocks[bufferSize-1]));
         // Get next block
         blocknum[bufferSize-1]++;
-        CHK_BF_ERR(BF_GetBlock(temp_fileDesk, blocknum[bufferSize-1], buff_blocks[bufferSize-1]));
+        CHK_BF_ERR(BF_GetBlock(temp_fileDesc, blocknum[bufferSize-1], buff_blocks[bufferSize-1]));
         buff_data[bufferSize-1] = BF_Block_GetData(buff_blocks[bufferSize-1]);
         blocks_passed[bufferSize-1]++;
         records_passed[bufferSize-1] = 0;
@@ -423,7 +423,7 @@ SR_ErrorCode SR_SortedFile(
         CHK_BF_ERR(BF_UnpinBlock(buff_blocks[min_record_i]));
         // Get next block
         blocknum[min_record_i]++;
-        CHK_BF_ERR(BF_GetBlock(temp_fileDesk, blocknum[min_record_i], buff_blocks[min_record_i]));
+        CHK_BF_ERR(BF_GetBlock(temp_fileDesc, blocknum[min_record_i], buff_blocks[min_record_i]));
         buff_data[min_record_i] = BF_Block_GetData(buff_blocks[min_record_i]);
         blocks_passed[min_record_i]++;
         records_passed[min_record_i] = 0;
@@ -455,13 +455,13 @@ SR_ErrorCode SR_SortedFile(
 
 
   }
-  int output_fileDesk;
+  int output_fileDesc;
 
   //PREPEI NA MPEI KAI TO COPY PASTE STO OUTPUT ARXEIO
 
   // Create the sorted, output file
   SR_CreateFile(output_filename);
-  SR_OpenFile(output_filename, &output_fileDesk);
+  SR_OpenFile(output_filename, &output_fileDesc);
   for (int i=0; i < bufferSize; i++)
     BF_Block_Destroy(&buff_blocks[i]); // <- ELPIZW NA MIN THELEI PARENTHESEIS
 
@@ -469,8 +469,8 @@ SR_ErrorCode SR_SortedFile(
   SR_CloseFile(input_fileDesc);
 
 
-  SR_CloseFile(output_fileDesk);
-  CHK_BF_ERR(BF_CloseFile(temp_fileDesk));
+  SR_CloseFile(output_fileDesc);
+  CHK_BF_ERR(BF_CloseFile(temp_fileDesc));
 
 
   return SR_OK;
@@ -488,7 +488,7 @@ SR_ErrorCode SR_PrintAllEntries(int fileDesc) {
 
   // For each block
   //AAAAAAAAAAAAAAAAAAAAAAA
-  for (int i = 1; i < block_num; i++) {
+  for (int i = 0; i < block_num; i++) {
     CHK_BF_ERR(BF_GetBlock(fileDesc, i, block));
     char* block_data = BF_Block_GetData(block);
     // Get number of records in current block
