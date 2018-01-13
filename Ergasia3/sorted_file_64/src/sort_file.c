@@ -227,11 +227,8 @@ SR_ErrorCode SR_SortedFile(
     for (int i = 0; i < bufferSize; i++) {
       int buff_recs = 0;
       memcpy(&buff_recs, buff_data[i], sizeof(int));
-      printf("buff_recs num is %d\n", buff_recs);
       tot_records += buff_recs;
     }
-
-    printf("Calling quicksort with total records %d\n", tot_records);
     // Call quicksort
     int low = 0;
     int high = tot_records - 1;
@@ -249,39 +246,39 @@ SR_ErrorCode SR_SortedFile(
   // NA KANW LIGO TA curr_group*bufferSize + i, AN ISXIOUN
   // Now call quicksort for the remaining blocks (input_file_block_number % bufferSize) EKSIGISI
   int rem_block_num = temp_block_num % bufferSize;
-  if (rem_block_num != 0) {
-    // Load remaining blocks into buffers
-    for (int i = 0; i < rem_block_num; i++) {
-      CHK_BF_ERR(BF_GetBlock(temp_fileDesc, curr_group*bufferSize + i, buff_blocks[i]));
-      buff_data[i] = BF_Block_GetData(buff_blocks[i]);
-    }
-    // Load blocks into buffers
-    for (int i = 0; i < bufferSize; i++) {
-      CHK_BF_ERR(BF_GetBlock(temp_fileDesc, curr_group*bufferSize + i, buff_blocks[i]));
-      buff_data[i] = BF_Block_GetData(buff_blocks[i]);
-    }
-    // Get total number of records in the buffers
-    int tot_records = 0;
-    for (int i = 0; i < bufferSize; i++) {
-      int buff_recs = 0;
-      memcpy(&buff_recs, buff_data[i], sizeof(int));
-      tot_records += buff_recs;
-    }
+  if (rem_block_num == 0)
+    rem_block_num = bufferSize;
 
-    // Call quicksort
-    int low = 0;
-    int high = tot_records - 1;
-    block_quicksort(buff_data, fieldNo, low, high);
-    // Dirty and unpin
-    for (int i = 0; i < bufferSize; i++) {
-      BF_Block_SetDirty(buff_blocks[i]);
-      CHK_BF_ERR(BF_UnpinBlock(buff_blocks[i]));
-    }
+  // Load remaining blocks into buffers
+  for (int i = 0; i < rem_block_num; i++) {
+    CHK_BF_ERR(BF_GetBlock(temp_fileDesc, curr_group*bufferSize + i, buff_blocks[i]));
+    buff_data[i] = BF_Block_GetData(buff_blocks[i]);
+  }
+  // Load blocks into buffers
+  for (int i = 0; i < rem_block_num; i++) {
+    CHK_BF_ERR(BF_GetBlock(temp_fileDesc, curr_group*bufferSize + i, buff_blocks[i]));
+    buff_data[i] = BF_Block_GetData(buff_blocks[i]);
+  }
+  // Get total number of records in the buffers
+  int tot_records = 0;
+  for (int i = 0; i < rem_block_num; i++) {
+    int buff_recs = 0;
+    memcpy(&buff_recs, buff_data[i], sizeof(int));
+    tot_records += buff_recs;
+  }
+  // Call quicksort
+  int low = 0;
+  int high = tot_records - 1;
+  block_quicksort(buff_data, fieldNo, low, high);
+  // Dirty and unpin
+  for (int i = 0; i < rem_block_num; i++) {
+    BF_Block_SetDirty(buff_blocks[i]);
+    CHK_BF_ERR(BF_UnpinBlock(buff_blocks[i]));
   }
 
 
-  SR_PrintAllEntries(temp_fileDesc);
-  return SR_OK;
+  //SR_PrintAllEntries(temp_fileDesc);
+  //return SR_OK;
 
 
 
@@ -484,11 +481,11 @@ SR_ErrorCode SR_PrintAllEntries(int fileDesc) {
   int block_num;
   CHK_BF_ERR(BF_GetBlockCounter(fileDesc, &block_num));
 
-  // File has benn opened, so no need to check for errors
+  // File has been opened, so no need to check for errors
 
   // For each block
   //AAAAAAAAAAAAAAAAAAAAAAA
-  for (int i = 0; i < block_num; i++) {
+  for (int i = 1; i < block_num; i++) {
     CHK_BF_ERR(BF_GetBlock(fileDesc, i, block));
     char* block_data = BF_Block_GetData(block);
     // Get number of records in current block
