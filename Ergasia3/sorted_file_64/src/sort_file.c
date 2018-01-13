@@ -192,7 +192,7 @@ SR_ErrorCode SR_SortedFile(
   BF_Block* buff_blocks[bufferSize];
   char* buff_data[bufferSize];
   for (int i = 0; i < bufferSize; i++)
-    BF_Block_Init(&buff_blocks[i]); // <- ELPIZW NA MIN THELEI PARENTHESEIS
+    BF_Block_Init(&buff_blocks[i]);
 
   // Then copy each block of the input file into the temporary one (only uses 2 buffer blocks)
   for (int i = 1; i < input_file_block_number; i++) {
@@ -210,7 +210,7 @@ SR_ErrorCode SR_SortedFile(
     CHK_BF_ERR(BF_UnpinBlock(buff_blocks[1]));
   }
 
-  int temp_block_num = input_file_block_number - 1;
+  const int temp_block_num = input_file_block_number - 1;
   // Main while loop (for step 1, quicksort)
   // Sort blocks in groups of bufferSize
   int curr_group = 0;
@@ -243,9 +243,9 @@ SR_ErrorCode SR_SortedFile(
     curr_group++;
   }
 
-  // NA KANW LIGO TA curr_group*bufferSize + i, AN ISXIOUN
-  // Now call quicksort for the remaining blocks (input_file_block_number % bufferSize) EKSIGISI
+  // Now call quicksort for the remaining blocks
   int rem_block_num = temp_block_num % bufferSize;
+  // May also be the last bufferSize number of blocks 
   if (rem_block_num == 0)
     rem_block_num = bufferSize;
 
@@ -276,28 +276,61 @@ SR_ErrorCode SR_SortedFile(
     CHK_BF_ERR(BF_UnpinBlock(buff_blocks[i]));
   }
 
-
-
-
-
-
-  // Create the sorted, output file
   // Check if bufferSize is greater than the number of blocks in the input file
   // in that case, step 2 is not needed
-  // if (bufferSize >=)
-  // EDW NA VALW IF KAI COPY-EXIT I NA VALOUME IF STA DIKA SOU??
-  // MIPWS NA GINOUN -1 GT IPARXOUN KAI METADATA
+  if (bufferSize >= temp_block_num) {
+    // Create the sorted, output file
+    SR_CreateFile(output_filename);
+    int output_fileDesc = 0;
+    // Open it and copy temp_file contents
+    SR_OpenFile(output_filename, &output_fileDesc);
+    for (int i = 0; i < temp_block_num; i++) {
+      // Get block of temp file
+      CHK_BF_ERR(BF_GetBlock(temp_fileDesc, i, buff_blocks[0]));
+      buff_data[0] = BF_Block_GetData(buff_blocks[0]);
+
+      // Create a symmetric block into the output file
+      CHK_BF_ERR(BF_AllocateBlock(output_fileDesc, buff_blocks[1]));
+      buff_data[1] = BF_Block_GetData(buff_blocks[1]);
+
+      // Copy data
+      memcpy(buff_data[1], buff_data[0], sizeof(int));
+
+      // Dirty and unpin
+      BF_Block_SetDirty(buff_blocks[1]);
+      CHK_BF_ERR(BF_UnpinBlock(buff_blocks[0]));
+      CHK_BF_ERR(BF_UnpinBlock(buff_blocks[1]));
+    }
+
+    // End program
+    // Destroy blocks
+    for (int i=0; i < bufferSize; i++)
+      BF_Block_Destroy(&buff_blocks[i]);
+    // Close files
+    SR_CloseFile(input_fileDesc);
+    CHK_BF_ERR(BF_CloseFile(temp_fileDesc));
+    SR_CloseFile(output_fileDesc);
+    // Delete temp file
+    remove(temp_filename);
+    return SR_OK;
+
+  }
 
 
 
-  ////////////////part 2//////////////////
+  ////////////////Part 2//////////////////
+
+
   //the temp file will have two times the Blocks of the original file
   //we know that so we will allocate them now
   //we wont need to create anymore
   //and beacuse of the way we use them this will simplify the process
-  for (int i=1; i < input_file_block_number; i++) {
-    // Get block of input file
-    CHK_BF_ERR(BF_GetBlock(input_fileDesc, i, buff_blocks[0]));
+
+  // Create another temp_block_num number of blocks in the temp file with the same
+  // number of records in them
+  for (int i=0; i < temp_block_num; i++) {
+    // Get block of temp file
+    CHK_BF_ERR(BF_GetBlock(temp_fileDesc, i, buff_blocks[0]));
     buff_data[0] = BF_Block_GetData(buff_blocks[0]);
 
     // Create a symmetric block into the temp file
@@ -312,40 +345,48 @@ SR_ErrorCode SR_SortedFile(
     CHK_BF_ERR(BF_UnpinBlock(buff_blocks[0]));
     CHK_BF_ERR(BF_UnpinBlock(buff_blocks[1]));
   }
+
+
+  // IPARXEI I METAVLITI temp_block_num !!
   int blocks_to_output=input_file_block_number-1;
   int j=0;//helps as pass the groups we saw
   int num_of_blocks=bufferSize; //the next block group will be that far and the block groups will have that many blocks
-  int num_of_block_groups=blocks_to_output/bufferSize;//number of groups
 
+  int num_of_block_groups=blocks_to_output/bufferSize;//number of groups
   if(blocks_to_output%bufferSize!=0)
     num_of_block_groups++;                  //if there is an incomplete group count it as a whole
 
   int groups_remain=num_of_block_groups;
   int fl=0;//depending on the number we see at the begining or at the middle
-  int blocknum[bufferSize]; //the number of the block we have at the buffer //to peirazeis
+  int blocknum[bufferSize]; //the number (index) of the block we have at the buffer //to peirazeis
   int new_group_num;
 
 
   int blocks_passed[bufferSize];  //how many we passed in group
   int records_passed[bufferSize];  //how many records we passed in block
   int records_in_block[bufferSize];//how many records does a block have
-  int set_unused[bufferSize-1];
-/*  for(int i=0;i<bufferSize;i++)
-  {
-    blocks_passed[i]=0;
-    records_passed[i]=0;
-    set_unused[i]=0;                //OTAN ARXIKOPOIW AUTA VGAZEI MEMORY MAP
+  
+  //int set_unused[bufferSize-1];
+
+
+  for(int i=0;i<bufferSize;i++) {
+    blocks_passed[i] = 0;
+    records_passed[i] = 0;
+    //set_unused[i]=0;                //OTAN ARXIKOPOIW AUTA VGAZEI MEMORY MAP
   }
-  for(int i=0;i<bufferSize-1;i++)
-  {
+
+  /*for(int i=0; i<bufferSize-1; i++) {
     set_unused[i]=0;
   }*/
+
   Record* record_data[bufferSize];
-  int max_records=17;
+  //int max_records=17;
   while (1) {
     for (int i=0; i < bufferSize-1; i++) {//take the first block from the first bufferSize-1 block groups
+      
       if (i == num_of_block_groups)
         break;
+
       CHK_BF_ERR(BF_GetBlock(temp_fileDesc, blocks_to_output*fl + num_of_blocks*(i+j), buff_blocks[i]));
       buff_data[i] = BF_Block_GetData(buff_blocks[i]);
       blocknum[i] = blocks_to_output*fl + num_of_blocks*(i+j);
@@ -367,6 +408,8 @@ SR_ErrorCode SR_SortedFile(
     if (num_of_block_groups <= bufferSize-1) {
       break;
     }
+
+
     /////////////////////////////////
     //EDW GINETAI TAKSINOMHSH////
     //take how many records a block has
@@ -382,12 +425,12 @@ SR_ErrorCode SR_SortedFile(
 
         if(set_unused[buff_i]==1)
           continue;
-          printf("\n\n\nnfdfdsfsdfsdfds\n");
+          //printf("\n\n\nnfdfdsfsdfsdfds\n");
 
         if(record_cmp(fieldNo,record_data[buff_i][records_passed[buff_i]],
         record_data[min_record_i][records_passed[min_record_i]])<0){
             min_record_i=buff_i;
-            printf("\n\n\nnfdfdsfsdfsdfds\n");
+            //printf("\n\n\nnfdfdsfsdfsdfds\n");
 
         }
       }
@@ -484,6 +527,29 @@ SR_ErrorCode SR_SortedFile(
 
   return SR_OK;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 SR_ErrorCode SR_PrintAllEntries(int fileDesc) {
   BF_Block *block;
