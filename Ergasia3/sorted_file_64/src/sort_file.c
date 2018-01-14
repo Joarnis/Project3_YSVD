@@ -384,15 +384,15 @@ SR_ErrorCode SR_SortedFile(
 
   // I TELEUTAIA OMADA APO BLOCK GROUPS MPOREI NA EINAI APO 0 EWS BUFFERSIZE-2 GROUPS (GIA TO MERGE POU XRISIMOPOIOUME TA BUFFERS)
   for (int i = 0; i < number_of_merges; i++) {
-    if ((i == number_of_merges-1) && (number_of_merges % (bufferSize-1) != 0))
-      buffers_needed_for_merge[i] = number_of_merges % (bufferSize-1);
+    if ((i == number_of_merges-1) && (num_of_block_groups % (bufferSize-1) != 0))
+      buffers_needed_for_merge[i] = num_of_block_groups % (bufferSize-1);
     else
       buffers_needed_for_merge[i] = bufferSize-1;
   }
 
   // ENDIAMESI TAKSINOMISI
   while (num_of_block_groups > bufferSize-1) {
-    printf("buffers_needed = %d\n", buffers_needed_for_merge[current_merge]);
+    printf("number_of_merges=%d  current_merge=%d  buffers_needed = %d\n",number_of_merges,current_merge, buffers_needed_for_merge[current_merge]);
 
     // Take the first block from the first bufferSize-1 block groups USING ONLY THE BUFFERS NEEDED FOR MERGE
     for (int i = 0; i < buffers_needed_for_merge[current_merge]; i++) {
@@ -554,15 +554,15 @@ SR_ErrorCode SR_SortedFile(
       // TO NUMBER OF MERGES EINAI POSO THA TREKSEI I WHILE MEXRI NA "MIDENISTEI"
       // TO NUMBER OF BLOCK GROUPS EINAI DIAFORETIKO, SE ENA MERGE XRISIMOPOIOUNTAI POLLA BLOCK GROUPS ( TA BLOCK GROUPS EINAI AUTA POU SOU DINW APO PRWTO MEROS)
       int new_number_of_merges = number_of_merges / (bufferSize-1);
-      if (number_of_merges / (bufferSize-1) != 0)
+      if (number_of_merges % (bufferSize-1) != 0)
         new_number_of_merges++;
 
       number_of_merges = new_number_of_merges;
 
       // I TELEUTAIA OMADA APO BLOCK GROUPS MPOREI NA EINAI APO 0 EWS BUFFERSIZE-2 GROUPS (GIA TO MERGE POU XRISIMOPOIOUME TA BUFFERS)
       for (int i = 0; i < number_of_merges; i++) {
-        if ((i == number_of_merges-1) && (number_of_merges % (bufferSize-1) != 0))
-          buffers_needed_for_merge[i] = number_of_merges % (bufferSize-1);
+        if ((i == number_of_merges-1) && (num_of_block_groups % (bufferSize-1) != 0))
+          buffers_needed_for_merge[i] = num_of_block_groups % (bufferSize-1);
         else
           buffers_needed_for_merge[i] = bufferSize-1;
       }
