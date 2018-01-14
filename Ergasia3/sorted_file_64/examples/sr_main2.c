@@ -28,6 +28,9 @@ int main() {
   CALL_OR_DIE(SR_Init());
   printf("Sorting 'unsorted_data.db' file in field 'name' ...");
   CALL_OR_DIE(SR_SortedFile("unsorted_data.db", "sorted_name.db", 1, 3));
+  //int fd_id;
+  //CALL_OR_DIE(SR_OpenFile("sorted_name.db", &fd_id));
+  //CALL_OR_DIE(SR_PrintAllEntries(fd_id));
   //printf("Sorting 'unsorted_data.db' file in field 'surname' ...");
   //CALL_OR_DIE(SR_SortedFile("unsorted_data.db", "sorted_surname.db", 2, 33))
   //printf("Sorting sorted_surname.db file in 'field' ...");
