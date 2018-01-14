@@ -371,7 +371,6 @@ SR_ErrorCode SR_SortedFile(
   int rec_index_in_block[bufferSize];    //how many records we passed in block
   int tot_recs_in_block[bufferSize];    //how many records does a block have
 
-
   int tot_blocks_in_group[bufferSize-1]; //how many blocks a group has
                                         //the last group might have less
   int buffers_needed_for_merge[number_of_merges]; //how many buffers we need for the merge (buffersize-1 or less)
@@ -397,7 +396,7 @@ SR_ErrorCode SR_SortedFile(
     }
 
 
-    // Take the first block from the first bufferSize-1 block groups USING ONLY THE BUFFERS NEEDED FOR MERGE
+    // Take the first block from the first block groups using only buffers actually needed for the merge
     for (int i = 0; i < buffers_needed_for_merge[current_merge]; i++) {
       block_index[i] = blocks_to_output*fl + blocks_in_group*(i+j);
       CHK_BF_ERR(BF_GetBlock(temp_fileDesc, block_index[i], buff_blocks[i]));
@@ -428,7 +427,6 @@ SR_ErrorCode SR_SortedFile(
       }
     }
 
-
     // Initialization for normal buffers may be fewer than bufferSize-1!!!!
     for (int i = 0; i < buffers_needed_for_merge[current_merge]; i++) {
       memcpy(&tot_recs_in_block[i], buff_data[i], sizeof(int));
@@ -438,7 +436,6 @@ SR_ErrorCode SR_SortedFile(
     }
 
     int no_more_recs = 0;
-
     while(!no_more_recs) {
       // Find min record value
       int min_record_i = -1;
@@ -469,7 +466,7 @@ SR_ErrorCode SR_SortedFile(
         block_index[min_record_i]++;
         block_index_in_group[min_record_i]++;
 
-        // IF NOT DONT GET NEXT BLOCK (WE SEARCH FOR THE OTHER BUFFERS)
+        // If not, do not get next block (instead search in the other buffers)
         if (block_index_in_group[min_record_i] < tot_blocks_in_group[min_record_i]) {
           CHK_BF_ERR(BF_GetBlock(temp_fileDesc, block_index[min_record_i], buff_blocks[min_record_i]));
 
@@ -560,13 +557,14 @@ SR_ErrorCode SR_SortedFile(
     }
 
   }
-//last merge create output file and put it there
+
+  //Last merge create output file and put it there
   int output_fileDesc;
   //Create the sorted, output file
   SR_CreateFile(output_filename);
   SR_OpenFile(output_filename, &output_fileDesc);
 
-  // Create another temp_block_num number of blocks in the temp file with the same
+  // Create another blocks_to_output number of blocks in the output file with the same
   // number of records in them
   for (int i=0; i < blocks_to_output; i++) {
     // Get block of temp file
@@ -586,10 +584,6 @@ SR_ErrorCode SR_SortedFile(
     CHK_BF_ERR(BF_UnpinBlock(buff_blocks[1]));
   }
 
-
-
-
-int count=0;
 
   for (int i = 0; i < buffers_needed_for_merge[current_merge]; i++) {
     if ((current_merge == number_of_merges - 1) && (i == buffers_needed_for_merge[current_merge] - 1))
@@ -645,12 +639,9 @@ int count=0;
     }
 
 
-
     // Copy the whole record to bufferSize-1 (output block)
     record_data[bufferSize-1][rec_index_in_block[bufferSize-1]]
       = record_data[min_record_i][rec_index_in_block[min_record_i]];
-
-      Record record = record_data[bufferSize-1][rec_index_in_block[bufferSize-1]];
 
     // We passed one record from one buffer
     rec_index_in_block[min_record_i]++;
@@ -662,7 +653,7 @@ int count=0;
       block_index[min_record_i]++;
       block_index_in_group[min_record_i]++;
 
-      // IF NOT DONT GET NEXT BLOCK (WE SEARCH FOR THE OTHER BUFFERS)
+      // If not, do not get next block (instead search in the other buffers)
       if (block_index_in_group[min_record_i] < tot_blocks_in_group[min_record_i]) {
         CHK_BF_ERR(BF_GetBlock(temp_fileDesc, block_index[min_record_i], buff_blocks[min_record_i]));
 
@@ -695,11 +686,7 @@ int count=0;
         record_data[bufferSize-1] = buff_data[bufferSize-1] + sizeof(int);
       }
     }
-
   }
-
-
-
 
   // End program
   // Destroy blocks
