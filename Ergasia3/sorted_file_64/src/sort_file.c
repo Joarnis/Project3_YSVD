@@ -392,6 +392,7 @@ SR_ErrorCode SR_SortedFile(
 
   // ENDIAMESI TAKSINOMISI
   while (num_of_block_groups > bufferSize-1) {
+    printf("buffers_needed = %d\n", buffers_needed_for_merge[current_merge]);
 
     // Take the first block from the first bufferSize-1 block groups USING ONLY THE BUFFERS NEEDED FOR MERGE
     for (int i = 0; i < buffers_needed_for_merge[current_merge]; i++) {
@@ -442,6 +443,7 @@ SR_ErrorCode SR_SortedFile(
     record_data[bufferSize-1] = buff_data[bufferSize-1] + sizeof(int);
 
 
+
     // AUTO MIN TO PEIRAZEIS GT TO MIN_RECORD ME TA IF MPOREI NA MEINEI 0 XWRIS LOGO
     int no_more_recs = 0;
     while(!no_more_recs) {
@@ -458,41 +460,16 @@ SR_ErrorCode SR_SortedFile(
           }
         }
       }
-      // AN OLOI OI BUFFERS DEN EXOUN ALLO, TELEIWSAME
-      if (min_record_i != -1) {
-        printf("den trww seg prin apo to min block buffer=%d rec_index=%d\n", min_record_i, rec_index_in_block[min_record_i]);
 
-        // Copy the whole record to bufferSize-1 (output block)
-        record_data[bufferSize-1][rec_index_in_block[bufferSize-1]]
-          = record_data[min_record_i][rec_index_in_block[min_record_i]];
-        printf("COPIED RECORD!! %d\n", counter++);
-      }
-      else
-        no_more_recs = 1; 
-        
-      // We passed one record in the output block
-      rec_index_in_block[bufferSize-1]++;
-      // Check if output buffer is full (get next block)
-      if (rec_index_in_block[bufferSize-1] == tot_recs_in_block[bufferSize-1]) {
-        // Dirty and Unpin previous block
-        BF_Block_SetDirty(buff_blocks[bufferSize-1]);
-        CHK_BF_ERR(BF_UnpinBlock(buff_blocks[bufferSize-1]));
-        
-        // Get next block
-        block_index[bufferSize-1]++;
-        block_index_in_group[bufferSize-1]++;//we passed one block
-        
-        // IF NOT THEN WE ARE EXITING DONT GET BLOCK
-        if (!no_more_recs) {
-          CHK_BF_ERR(BF_GetBlock(temp_fileDesc, block_index[bufferSize-1], buff_blocks[bufferSize-1]));
 
-          rec_index_in_block[bufferSize-1] = 0;
+      printf("den trww seg prin apo to min block buffer=%d rec_index=%d\n", min_record_i, rec_index_in_block[min_record_i]);
 
-          buff_data[bufferSize-1] = BF_Block_GetData(buff_blocks[bufferSize-1]);
-          memcpy(&tot_recs_in_block[bufferSize-1], buff_data[bufferSize-1], sizeof(int));
-          record_data[bufferSize-1] = buff_data[bufferSize-1] + sizeof(int);
-        }
-      }
+      // Copy the whole record to bufferSize-1 (output block)
+      record_data[bufferSize-1][rec_index_in_block[bufferSize-1]]
+        = record_data[min_record_i][rec_index_in_block[min_record_i]];
+      printf("COPIED RECORD!! %d\n", counter++);
+        
+      
 
       // We passed one record from one buffer
       rec_index_in_block[min_record_i]++;
@@ -516,6 +493,40 @@ SR_ErrorCode SR_SortedFile(
         }
       }
 
+      // Now preform check to see if there are more records to copy
+      no_more_recs = 1;
+      for (int buff_i = 0; buff_i < buffers_needed_for_merge[current_merge]; buff_i++)
+        if (block_index_in_group[buff_i] < tot_blocks_in_group[buff_i])
+          no_more_recs = 0;
+
+      if (!no_more_recs) { 
+        // We passed one record in the output block
+        rec_index_in_block[bufferSize-1]++;
+        // Check if output buffer is full (get next block)
+        if (rec_index_in_block[bufferSize-1] == tot_recs_in_block[bufferSize-1]) {
+          // Dirty and Unpin previous block
+          BF_Block_SetDirty(buff_blocks[bufferSize-1]);
+          CHK_BF_ERR(BF_UnpinBlock(buff_blocks[bufferSize-1]));
+        
+          // Get next block
+          block_index[bufferSize-1]++;
+          block_index_in_group[bufferSize-1]++;//we passed one block
+      
+          CHK_BF_ERR(BF_GetBlock(temp_fileDesc, block_index[bufferSize-1], buff_blocks[bufferSize-1]));
+
+          rec_index_in_block[bufferSize-1] = 0;
+
+          buff_data[bufferSize-1] = BF_Block_GetData(buff_blocks[bufferSize-1]);
+          memcpy(&tot_recs_in_block[bufferSize-1], buff_data[bufferSize-1], sizeof(int));
+          record_data[bufferSize-1] = buff_data[bufferSize-1] + sizeof(int);
+        }
+      }
+      // Else exit, Dirty and Unpin
+      else {
+        // Dirty and Unpin previous block
+        BF_Block_SetDirty(buff_blocks[bufferSize-1]);
+        CHK_BF_ERR(BF_UnpinBlock(buff_blocks[bufferSize-1]));
+      }
 
     }
 
