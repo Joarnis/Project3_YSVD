@@ -414,12 +414,22 @@ SR_ErrorCode SR_SortedFile(
         block_index[bufferSize-1] = blocks_to_output;
         CHK_BF_ERR(BF_GetBlock(temp_fileDesc, block_index[bufferSize-1], buff_blocks[bufferSize-1]));
         buff_data[bufferSize-1] = BF_Block_GetData(buff_blocks[bufferSize-1]);
+
+        memcpy(&tot_recs_in_block[bufferSize-1], buff_data[bufferSize-1], sizeof(int));
+        block_index_in_group[bufferSize-1] = 0;
+        rec_index_in_block[bufferSize-1] = 0;
+        record_data[bufferSize-1] = buff_data[bufferSize-1] + sizeof(int);
         
       }
       else {
         block_index[bufferSize-1] = 0;
         CHK_BF_ERR(BF_GetBlock(temp_fileDesc , block_index[bufferSize-1], buff_blocks[bufferSize-1]));
         buff_data[bufferSize-1] = BF_Block_GetData(buff_blocks[bufferSize-1]);
+
+        memcpy(&tot_recs_in_block[bufferSize-1], buff_data[bufferSize-1], sizeof(int));
+        block_index_in_group[bufferSize-1] = 0;
+        rec_index_in_block[bufferSize-1] = 0;
+        record_data[bufferSize-1] = buff_data[bufferSize-1] + sizeof(int);
       }
     }
 
@@ -441,12 +451,6 @@ SR_ErrorCode SR_SortedFile(
       rec_index_in_block[i] = 0;
       record_data[i] = buff_data[i] + sizeof(int);
     }
-
-    // For output buffer
-    memcpy(&tot_recs_in_block[bufferSize-1], buff_data[bufferSize-1], sizeof(int));
-    block_index_in_group[bufferSize-1] = 0;
-    rec_index_in_block[bufferSize-1] = 0;
-    record_data[bufferSize-1] = buff_data[bufferSize-1] + sizeof(int);
 
 
 
@@ -477,8 +481,8 @@ SR_ErrorCode SR_SortedFile(
       // FOR DEBUG
       //if (number_of_merges == 14) {
         //Record record = record_data[min_record_i][rec_index_in_block[min_record_i]];
-        //printf("%d,\"%s\",\"%s\",\"%s\"\n",
-          //record.id, record.name, record.surname, record.city);
+       //printf("%d,\"%s\",\"%s\",\"%s\"\n",
+         // record.id, record.name, record.surname, record.city);
       //}
 
       
@@ -510,19 +514,19 @@ SR_ErrorCode SR_SortedFile(
         if (block_index_in_group[buff_i] < tot_blocks_in_group[buff_i])
           no_more_recs = 0;
 
-      if (!no_more_recs) { 
-        // We passed one record in the output block
-        rec_index_in_block[bufferSize-1]++;
-        // Check if output buffer is full (get next block)
-        if (rec_index_in_block[bufferSize-1] == tot_recs_in_block[bufferSize-1]) {
-          // Dirty and Unpin previous block
-          BF_Block_SetDirty(buff_blocks[bufferSize-1]);
-          CHK_BF_ERR(BF_UnpinBlock(buff_blocks[bufferSize-1]));
+      // We passed one record in the output block
+      rec_index_in_block[bufferSize-1]++;
+      // Check if output buffer is full (get next block)
+      if (rec_index_in_block[bufferSize-1] == tot_recs_in_block[bufferSize-1]) {
+        // Dirty and Unpin previous block
+        BF_Block_SetDirty(buff_blocks[bufferSize-1]);
+        CHK_BF_ERR(BF_UnpinBlock(buff_blocks[bufferSize-1]));
         
-          // Get next block
-          block_index[bufferSize-1]++;
-          block_index_in_group[bufferSize-1]++;//we passed one block
-      
+        // Get next block
+        block_index[bufferSize-1]++;
+        block_index_in_group[bufferSize-1]++;//we passed one block
+        // Only if its in bounds
+        if (block_index[bufferSize-1] < 2*blocks_to_output - blocks_to_output*fl) {
           CHK_BF_ERR(BF_GetBlock(temp_fileDesc, block_index[bufferSize-1], buff_blocks[bufferSize-1]));
 
           rec_index_in_block[bufferSize-1] = 0;
@@ -532,12 +536,13 @@ SR_ErrorCode SR_SortedFile(
           record_data[bufferSize-1] = buff_data[bufferSize-1] + sizeof(int);
         }
       }
-      // Else exit, Dirty and Unpin
-      else {
-        // Dirty and Unpin previous block
-        BF_Block_SetDirty(buff_blocks[bufferSize-1]);
-        CHK_BF_ERR(BF_UnpinBlock(buff_blocks[bufferSize-1]));
-      }
+
+      // Now preform check to see if there are more records to copy
+      no_more_recs = 1;
+      for (int buff_i = 0; buff_i < buffers_needed_for_merge[current_merge]; buff_i++)
+        if (block_index_in_group[buff_i] < tot_blocks_in_group[buff_i])
+          no_more_recs = 0;
+
 
     }
 
@@ -631,9 +636,9 @@ SR_ErrorCode SR_SortedFile(
 /* TELEUTAIA TAKSINOMISI SXEDON IDIA ME PANW XWRIS TO MEGALO WHILE */
 // TELIKO GIA COPY STO OUTPUT KANEI TO TELIKO SORTARISMA EXOUME GROUPS = num_of_block_groups
 
+int count=0;
 
 
-/*
 
   for (int i = 0; i < buffers_needed_for_merge[current_merge]; i++) {
     if ((current_merge == number_of_merges - 1) && (i == buffers_needed_for_merge[current_merge] - 1))
@@ -651,10 +656,16 @@ SR_ErrorCode SR_SortedFile(
     buff_data[i] = BF_Block_GetData(buff_blocks[i]);
   }
 
+  // For output buffer
   block_index[bufferSize-1] = 1;
   CHK_BF_ERR(BF_GetBlock(output_fileDesc, block_index[bufferSize-1], buff_blocks[bufferSize-1]));
   buff_data[bufferSize-1] = BF_Block_GetData(buff_blocks[bufferSize-1]);
-
+  
+  
+  memcpy(&tot_recs_in_block[bufferSize-1], buff_data[bufferSize-1], sizeof(int));     
+  block_index_in_group[bufferSize-1] = 0;
+  rec_index_in_block[bufferSize-1] = 0;
+  record_data[bufferSize-1] = buff_data[bufferSize-1] + sizeof(int);
 
     // TO TELEUTAIO GROUP THA EXEI ALLON ARITHMO BLOCKS 
     
@@ -675,16 +686,11 @@ SR_ErrorCode SR_SortedFile(
     record_data[i] = buff_data[i] + sizeof(int);
   }
 
-  // For output buffer
-  //memcpy(&tot_recs_in_block[bufferSize-1], buff_data[bufferSize-1], sizeof(int)); AUTO MPOREI NA EINAI MALAKIA      
-  block_index_in_group[bufferSize-1] = 0;
-  rec_index_in_block[bufferSize-1] = 0;
-  record_data[bufferSize-1] = buff_data[bufferSize-1] + sizeof(int);
+  
 
 
   // AUTO MIN TO PEIRAZEIS GT TO MIN_RECORD ME TA IF MPOREI NA MEINEI 0 XWRIS LOGO
-  int no_more_recs = 0;
-  while(!no_more_recs) {
+  while(block_index[bufferSize-1] <= blocks_to_output) {
     // Find min record value
     int min_record_i = -1;
     for (int buff_i = 0; buff_i < buffers_needed_for_merge[current_merge]; buff_i++) {
@@ -705,14 +711,12 @@ SR_ErrorCode SR_SortedFile(
     // Copy the whole record to bufferSize-1 (output block)
     record_data[bufferSize-1][rec_index_in_block[bufferSize-1]]
       = record_data[min_record_i][rec_index_in_block[min_record_i]];
-    
-
-    // FOR DEBUG FINAL RESULTS
-    Record record = record_data[min_record_i][rec_index_in_block[min_record_i]];
-    printf("%d,\"%s\",\"%s\",\"%s\"\n",
-          record.id, record.name, record.surname, record.city);  
+        
+    // FOR DEBUG
+      Record record = record_data[bufferSize-1][rec_index_in_block[bufferSize-1]];
+      printf("%d,\"%s\",\"%s\",\"%s\"\n",
+        record.id, record.name, record.surname, record.city);
       
-
     // We passed one record from one buffer
     rec_index_in_block[min_record_i]++;
     // If there are no other records in the block of the min record, move to the next block
@@ -733,27 +737,20 @@ SR_ErrorCode SR_SortedFile(
         memcpy(&tot_recs_in_block[min_record_i], buff_data[min_record_i], sizeof(int));
         record_data[min_record_i] = buff_data[min_record_i] + sizeof(int);
       }
-     }
-
-    // Now preform check to see if there are more records to copy
-    no_more_recs = 1;
-    for (int buff_i = 0; buff_i < buffers_needed_for_merge[current_merge]; buff_i++)
-      if (block_index_in_group[buff_i] < tot_blocks_in_group[buff_i])
-        no_more_recs = 0;
-
-    if (!no_more_recs) { 
-      // We passed one record in the output block
-      rec_index_in_block[bufferSize-1]++;
-      // Check if output buffer is full (get next block)
-      if (rec_index_in_block[bufferSize-1] == tot_recs_in_block[bufferSize-1]) {
-        // Dirty and Unpin previous block
-        BF_Block_SetDirty(buff_blocks[bufferSize-1]);
-        CHK_BF_ERR(BF_UnpinBlock(buff_blocks[bufferSize-1]));
-      
-        // Get next block
-        block_index[bufferSize-1]++;
-        block_index_in_group[bufferSize-1]++;//we passed one block
-      
+    }
+    // We passed one record in the output block
+    rec_index_in_block[bufferSize-1]++;
+    // Check if output buffer is full (get next block)
+    if (rec_index_in_block[bufferSize-1] == tot_recs_in_block[bufferSize-1]) {
+      // Dirty and Unpin previous block
+      BF_Block_SetDirty(buff_blocks[bufferSize-1]);
+      CHK_BF_ERR(BF_UnpinBlock(buff_blocks[bufferSize-1]));
+        
+      // Get next block
+      block_index[bufferSize-1]++;
+      block_index_in_group[bufferSize-1]++;//we passed one block
+      // Only if its in bounds
+      if (block_index[bufferSize-1] <= blocks_to_output) {
         CHK_BF_ERR(BF_GetBlock(temp_fileDesc, block_index[bufferSize-1], buff_blocks[bufferSize-1]));
 
         rec_index_in_block[bufferSize-1] = 0;
@@ -763,15 +760,9 @@ SR_ErrorCode SR_SortedFile(
         record_data[bufferSize-1] = buff_data[bufferSize-1] + sizeof(int);
       }
     }
-    // Else exit, Dirty and Unpin
-    else {
-      // Dirty and Unpin previous block
-      BF_Block_SetDirty(buff_blocks[bufferSize-1]);
-      CHK_BF_ERR(BF_UnpinBlock(buff_blocks[bufferSize-1]));
-    }
 
   }
-*/
+
   
   
   
